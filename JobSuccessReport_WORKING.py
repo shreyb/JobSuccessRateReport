@@ -118,8 +118,8 @@ class JobSuccessRateReporter(Reporter):
                 self.clusters[clusterid] = []
             self.clusters[clusterid].append(job)
 	    
-	    print i	#MY TEST COUNTER
-	    i+=1	#MY TEST COUNTER
+    	    print i	#MY TEST COUNTER
+	        i+=1	#MY TEST COUNTER
 #        MySQLUtils.removeClientConfig(mysql_client_cfg)
 
     def send_report(self):
