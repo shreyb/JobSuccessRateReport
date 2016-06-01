@@ -126,7 +126,6 @@ class JobSuccessRateReporter(Reporter):
             return
         
     
-    	#i=0		#MY TEST COUNTER 
     	for line in results:
             tmp = line.split('\t')
             start_time = tmp[0].strip().replace('T',' ').replace('Z','')
@@ -144,8 +143,6 @@ class JobSuccessRateReporter(Reporter):
                 self.clusters[clusterid] = []
             self.clusters[clusterid].append(job)
 	    
-    	    #print i	#MY TEST COUNTER
-	    #i+=1	#MY TEST COUNTER
 #        MySQLUtils.removeClientConfig(mysql_client_cfg)
 
     def send_report(self):
@@ -210,18 +207,10 @@ class JobSuccessRateReporter(Reporter):
         text = text.replace("$VO", self.vo)
         fn = "%s-jobrate.%s" % (self.vo.lower(), self.start_time.replace("/", "-"))
         
-        #Temporary file handling
-        if os.path.exists(fn):
-                os.unlink(fn)
-
-        #end temporary file handling
-	
 
 	f = open(fn, "w")
         f.write(text)
         f.close()
-        
-	
 	
 	#The part that actually emails people.  Will need to figure out why this didn't work.
 	if self.is_test:
@@ -232,9 +221,8 @@ class JobSuccessRateReporter(Reporter):
         TextUtils.sendEmail(([], emails), "%s Production Jobs Success Rate on the OSG Sites (%s - %s)" %
                             (self.vo, self.start_time, self.end_time), {"html": text},
 			    ("Gratia Operation", "tlevshin@fnal.gov"), "localhost")
-	#print "email command run"
 
-        #os.unlink(fn)
+        os.unlink(fn)
 
 
 def parse_opts():
