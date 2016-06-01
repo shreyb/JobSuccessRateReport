@@ -5,9 +5,12 @@ import traceback
 import TextUtils
 import Configuration
 #from MySQLUtils import MySQLUtils
+import json
 from Reporter import Reporter
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
+
+
 
 class Jobs:
     def __init__(self):
@@ -43,26 +46,9 @@ class JobSuccessRateReporter(Reporter):
     def generate(self):
         client=Elasticsearch()
         results=[]
-        querystring = '
-            {
-                "bool":{
-                  "must":[
-                    {"wildcard":{"VOName":"*uboone*"}},
-                    {"wildcard":{"CommonName":"*uboonegpvm01.fnal.gov"}}
-                  ],
-                  "filter":[
-                      {"term":{"Resource.ResourceType":"BatchPilot"}},
-                      {"range":{
-                        "EndTime":{
-                          "gte": "2016-05-15T07:30",
-                          "lt":"2016-05-16T07:30"
-                        }
-                      }}
-                  ]
-                }
-              }
-            )
-            ' 
+        queryfile=open('jobrate_query.json','r')
+        queryload=json.load(queryfile)
+        querystring = json.dumps(queryload) 
         resultset = Search(using=client,index='gracc-osg-2016*').query(querystring)
         for hit in resultset.scan():
             try:
