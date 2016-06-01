@@ -43,7 +43,7 @@ class JobSuccessRateReporter(Reporter):
     def generate(self):
         client=Elasticsearch()
         results=[]
-        resultset = Search(using=client,index='gracc-osg-2016*').query(
+        querystring = '
             {
                 "bool":{
                   "must":[
@@ -62,6 +62,8 @@ class JobSuccessRateReporter(Reporter):
                 }
               }
             )
+            ' 
+        resultset = Search(using=client,index='gracc-osg-2016*').query(querystring)
         for hit in resultset.scan():
             try:
                 globaljobid = hit['GlobalJobId'][0]
