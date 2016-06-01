@@ -46,10 +46,6 @@ class JobSuccessRateReporter(Reporter):
     def generate(self):
         client=Elasticsearch()
         results=[]
-        #queryfile=open('jobrate_query.json','r')
-        #queryload=json.load(queryfile)
-        #querystring = json.dumps(queryload) 
-        #print querystring
 	
 	wildcardvo = '*'+self.vo.lower()+'*'
 	wildcardcommonname='*'+'*'
@@ -89,8 +85,6 @@ class JobSuccessRateReporter(Reporter):
 			
 			
 			
-#			querystringi
-		#) 
 
 
         for hit in resultset.scan():
