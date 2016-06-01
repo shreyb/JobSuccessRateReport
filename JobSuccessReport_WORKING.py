@@ -49,7 +49,8 @@ class JobSuccessRateReporter(Reporter):
         queryfile=open('jobrate_query.json','r')
         queryload=json.load(queryfile)
         querystring = json.dumps(queryload) 
-        resultset = Search(using=client,index='gracc-osg-2016*').query(querystring)
+        print querystring
+	resultset = Search(using=client,index='gracc-osg-2016*').query(querystring)
         for hit in resultset.scan():
             try:
                 globaljobid = hit['GlobalJobId'][0]
@@ -107,7 +108,7 @@ class JobSuccessRateReporter(Reporter):
             self.clusters[clusterid].append(job)
 	    
     	    print i	#MY TEST COUNTER
-	        i+=1	#MY TEST COUNTER
+	    i+=1	#MY TEST COUNTER
 #        MySQLUtils.removeClientConfig(mysql_client_cfg)
 
     def send_report(self):
