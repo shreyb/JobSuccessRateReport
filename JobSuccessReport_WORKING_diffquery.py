@@ -8,7 +8,7 @@ import Configuration
 import json
 from Reporter import Reporter
 from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search
+from elasticsearch_dsl import Search , Q
 
 
 
@@ -51,7 +51,23 @@ class JobSuccessRateReporter(Reporter):
         #querystring = json.dumps(queryload) 
         #print querystring
 	
-#	querystring = '	
+	wildcardvo = '*'+self.vo.lower()+'*'
+	wildcardcommonname='*'+'*'
+ 		#common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
+		#%" + common_name + \
+		#		131         #         "%'
+		#'
+	starttimeq = self.start_time.replace('/','-').replace(' ','T')
+	endtimeq = self.end_time.replace('/','-').replace(' ','T')
+
+
+	querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvo,wildcardcommonname,starttimeq,endtimeq)
+
+	resultset = Search(using=client,index='gracc-osg-2016*') \
+			.query("wildcard",VOName=wildcardvo)\
+			.query("wildcard",CommonName="*uboonegpvm01.fnal.gov*")\
+			.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
+			.filter(Q({"term":{"Resource.ResourceType":"BatchPilot"}}))
 #		{
 #		  "bool":{
 #		    "must":[
@@ -69,34 +85,12 @@ class JobSuccessRateReporter(Reporter):
 #		    ]
 #		  }
 #		}
-#		'
-	
-	
-	resultset = Search(using=client,index='gracc-osg-2016*').query(
-			
-		{
-		  "bool":{
-		    "must":[
-		      {"wildcard":{"VOName":"*dune*"}},
-		      {"wildcard":{"CommonName":"*dunegpvm01.fnal.gov"}}
-		    ],
-		    "filter":[
-			{"term":{"Resource.ResourceType":"BatchPilot"}},
-			{"range":{
-			  "EndTime":{
-			    "gte": "2016-05-09T12:01",
-			    "lt":"2016-05-10T12:01"
-			  }
-			}}
-		    ]
-		  }
-		}
 			
 			
 			
 			
 #			querystringi
-		) 
+		#) 
 
 
         for hit in resultset.scan():
@@ -111,7 +105,7 @@ class JobSuccessRateReporter(Reporter):
                                                 hit['Resource']['ExitCode']
                                                 )
                 results.append(outstr)
-	#	print outstr
+		print outstr
             except KeyError as e:
                 pass
 	
@@ -124,20 +118,21 @@ class JobSuccessRateReporter(Reporter):
         #         "' ', 1), r.Value as Status  from JobUsageRecord j,  Resource r where r.dbid = j.dbid and" + \
         #         " r.Description = 'ExitCode' and  EndTime>= '" + self.start_time + "' and EndTime < '" + \
         #         self.end_time + "' and ResourceType = 'BatchPilot' and CommonName like '%" + common_name + \
+	n_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
         #         "%' and VOName like '%" + self.vo.lower() + "%' order by HostDescription, Host, GlobalJobId,  r.Value;"
         if self.verbose:
-            print >> sys.stdout, "QUERY STATEMENT HERE"
+            print >> sys.stdout, querystringverbose
         #results, return_code = MySQLUtils.RunQuery(select, self.connectStr)
         #if return_code != 0:
         #    raise Exception('Error to access mysql database')
         if self.verbose:
-            print >> sys.stdout, "RESULTS STATEMENT HERE"
+            print >> sys.stdout, results
         if len(results) == 1 and len(results[0].strip()) == 0:
             print >> sys.stdout, "Nothing to report"
             return
         
     
-    	i=0		#MY TEST COUNTER 
+    	#i=0		#MY TEST COUNTER 
     	for line in results:
             tmp = line.split('\t')
             start_time = tmp[0].strip().replace('T',' ').replace('Z','')
@@ -155,8 +150,8 @@ class JobSuccessRateReporter(Reporter):
                 self.clusters[clusterid] = []
             self.clusters[clusterid].append(job)
 	    
-    	    print i	#MY TEST COUNTER
-	    i+=1	#MY TEST COUNTER
+    	    #print i	#MY TEST COUNTER
+	    #i+=1	#MY TEST COUNTER
 #        MySQLUtils.removeClientConfig(mysql_client_cfg)
 
     def send_report(self):
@@ -243,6 +238,8 @@ class JobSuccessRateReporter(Reporter):
         TextUtils.sendEmail(([], emails), "%s Production Jobs Success Rate on the OSG Sites (%s - %s)" %
                             (self.vo, self.start_time, self.end_time), {"html": text},
 			    ("Gratia Operation", "tlevshin@fnal.gov"), "localhost")
+	#print "email command run"
+
         #os.unlink(fn)
 
 
