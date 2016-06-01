@@ -5,7 +5,7 @@ import traceback
 import TextUtils
 import Configuration
 #from MySQLUtils import MySQLUtils
-import json
+#import json
 from Reporter import Reporter
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search , Q
