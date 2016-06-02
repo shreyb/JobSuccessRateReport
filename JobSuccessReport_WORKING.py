@@ -79,10 +79,6 @@ class JobSuccessRateReporter(Reporter):
 #		  }
 #		}
 			
-			
-			
-			
-
 
         for hit in resultset.scan():
             try:
@@ -96,9 +92,11 @@ class JobSuccessRateReporter(Reporter):
                                                 hit['Resource']['ExitCode']
                                                 )
                 results.append(outstr)
-		print outstr
+
+		if self.verbose:
+			print >> sys.stdout, outstr
             except KeyError as e:
-                pass
+                pass #Figure this out
 	
 	
         #mysql_client_cfg = MySQLUtils.createClientConfig("main_db", self.config)
@@ -116,8 +114,11 @@ class JobSuccessRateReporter(Reporter):
         #results, return_code = MySQLUtils.RunQuery(select, self.connectStr)
         #if return_code != 0:
         #    raise Exception('Error to access mysql database')
-        if self.verbose:
-            print >> sys.stdout, results
+        
+	#Replaced with print statement in resultset.scan() loop
+	#if self.verbose:
+        #    print >> sys.stdout, results
+
         if len(results) == 1 and len(results[0].strip()) == 0:
             print >> sys.stdout, "Nothing to report"
             return
