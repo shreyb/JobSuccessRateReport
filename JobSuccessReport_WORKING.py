@@ -60,7 +60,8 @@ class JobSuccessRateReporter(Reporter):
 			.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
 			.filter(Q({"term":{"Resource.ResourceType":"BatchPilot"}}))
 			
-
+	response = resultset.execute()
+	return_code = response.success()	#True if the elasticsearch query completed without errors
         for hit in resultset.scan():
             try:
 		globaljobid = hit['GlobalJobId'][0]
@@ -92,8 +93,8 @@ class JobSuccessRateReporter(Reporter):
         if self.verbose:
             print >> sys.stdout, querystringverbose
         #results, return_code = MySQLUtils.RunQuery(select, self.connectStr)
-        #if return_code != 0:
-        #    raise Exception('Error to access mysql database')
+        if not return_code:
+            raise Exception('Error to access mysql database')
         
 	#Replaced with print statement in resultset.scan() loop
 	#if self.verbose:
