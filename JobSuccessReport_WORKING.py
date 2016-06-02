@@ -4,8 +4,6 @@ import optparse
 import traceback
 import TextUtils
 import Configuration
-#from MySQLUtils import MySQLUtils
-#import json
 from Reporter import Reporter
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search , Q
@@ -61,37 +59,20 @@ class JobSuccessRateReporter(Reporter):
 			.query("wildcard",CommonName=wildcardcommonnameq)\
 			.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
 			.filter(Q({"term":{"Resource.ResourceType":"BatchPilot"}}))
-#		{
-#		  "bool":{
-#		    "must":[
-#		      {"wildcard":{"VOName":"*dune*"}},
-#		      {"wildcard":{"CommonName":"*dunegpvm01.fnal.gov"}}
-#		    ],
-#		    "filter":[
-#			{"term":{"Resource.ResourceType":"BatchPilot"}},
-#			{"range":{
-#			  "EndTime":{
-#			    "gte": "2016-05-09T12:01",
-#			    "lt":"2016-05-10T12:01"
-#			  }
-#			}}
-#		    ]
-#		  }
-#		}
 			
 
         for hit in resultset.scan():
             try:
-                globaljobid = hit['GlobalJobId'][0]
-                jobid = globaljobid.split('#')[1]+'@'+globaljobid[globaljobid.find('.')+1:globaljobid.find('#')]
-                outstr= "%s\t%s\t%s\t%s\t%s\t%s" % (hit['StartTime'][0],\
-                                                hit['EndTime'][0],\
-                                                jobid,\
-                                                hit['Host']['description'][0],\
-                                                hit['Host']['value'][0],\
-                                                hit['Resource']['ExitCode']
-                                                )
-                results.append(outstr)
+		globaljobid = hit['GlobalJobId'][0]
+		jobid = globaljobid.split('#')[1]+'@'+globaljobid[globaljobid.find('.')+1:globaljobid.find('#')]
+		outstr= "%s\t%s\t%s\t%s\t%s\t%s" % (hit['StartTime'][0],\
+						hit['EndTime'][0],\
+						jobid,\
+						hit['Host']['description'][0],\
+						hit['Host']['value'][0],\
+						hit['Resource']['ExitCode']
+						)
+		results.append(outstr)
 
 		if self.verbose:
 			print >> sys.stdout, outstr
@@ -107,7 +88,6 @@ class JobSuccessRateReporter(Reporter):
         #         "' ', 1), r.Value as Status  from JobUsageRecord j,  Resource r where r.dbid = j.dbid and" + \
         #         " r.Description = 'ExitCode' and  EndTime>= '" + self.start_time + "' and EndTime < '" + \
         #         self.end_time + "' and ResourceType = 'BatchPilot' and CommonName like '%" + common_name + \
-#	n_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
         #         "%' and VOName like '%" + self.vo.lower() + "%' order by HostDescription, Host, GlobalJobId,  r.Value;"
         if self.verbose:
             print >> sys.stdout, querystringverbose
