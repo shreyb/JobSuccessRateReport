@@ -47,21 +47,18 @@ class JobSuccessRateReporter(Reporter):
         client=Elasticsearch()
         results=[]
 	
-	wildcardvo = '*'+self.vo.lower()+'*'
-	wildcardcommonname='*'+'*'
- 		#common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
-		#%" + common_name + \
-		#		131         #         "%'
-		#'
+ 	common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
+	wildcardvoq = '*'+self.vo.lower()+'*'
+	wildcardcommonnameq ='*'+common_name+'*'
 	starttimeq = self.start_time.replace('/','-').replace(' ','T')
 	endtimeq = self.end_time.replace('/','-').replace(' ','T')
 
 
-	querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvo,wildcardcommonname,starttimeq,endtimeq)
+	querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvoq,wildcardcommonnameq,starttimeq,endtimeq)
 
 	resultset = Search(using=client,index='gracc-osg-2016*') \
-			.query("wildcard",VOName=wildcardvo)\
-			.query("wildcard",CommonName="*uboonegpvm01.fnal.gov*")\
+			.query("wildcard",VOName=wildcardvoq)\
+			.query("wildcard",CommonName=wildcardcommonnameq)\
 			.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
 			.filter(Q({"term":{"Resource.ResourceType":"BatchPilot"}}))
 #		{
@@ -112,7 +109,7 @@ class JobSuccessRateReporter(Reporter):
         #         "' ', 1), r.Value as Status  from JobUsageRecord j,  Resource r where r.dbid = j.dbid and" + \
         #         " r.Description = 'ExitCode' and  EndTime>= '" + self.start_time + "' and EndTime < '" + \
         #         self.end_time + "' and ResourceType = 'BatchPilot' and CommonName like '%" + common_name + \
-	n_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
+#	n_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
         #         "%' and VOName like '%" + self.vo.lower() + "%' order by HostDescription, Host, GlobalJobId,  r.Value;"
         if self.verbose:
             print >> sys.stdout, querystringverbose
