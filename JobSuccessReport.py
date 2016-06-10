@@ -42,7 +42,7 @@ class JobSuccessRateReporter(Reporter):
         self.connectStr = None
 
     def generate(self):
-        client=Elasticsearch()
+        client=Elasticsearch(timeout=60)
         results=[]
 	
  	common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
@@ -62,7 +62,9 @@ class JobSuccessRateReporter(Reporter):
 			
 	response = resultset.execute()
 	return_code = response.success()	#True if the elasticsearch query completed without errors
-        for hit in resultset.scan():
+        
+	
+	for hit in resultset.scan():
             try:
 		globaljobid = hit['GlobalJobId'][0]
 		jobid = globaljobid.split('#')[1]+'@'+globaljobid[globaljobid.find('.')+1:globaljobid.find('#')]
