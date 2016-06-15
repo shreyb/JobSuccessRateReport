@@ -54,11 +54,18 @@ class JobSuccessRateReporter(Reporter):
 
 	querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvoq,wildcardcommonnameq,starttimeq,endtimeq)
 
-	resultset = Search(using=client,index='gracc-osg-2016*') \
-			.query("wildcard",VOName=wildcardvoq)\
-			.query("wildcard",CommonName=wildcardcommonnameq)\
-			.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
-			.filter(Q({"term":{"Resource.ResourceType":"BatchPilot"}}))
+	resultset = Search(using=client,index='gracc.osg.raw*') \
+        	.query("wildcard",VOName=wildcardvoq)\
+        	.query("wildcard",CommonName=wildcardcommonnameq)\
+        	.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
+        	.filter(Q({"term":{"ResourceType":"Payload"}}))	
+
+
+	#resultset = Search(using=client,index='gracc-osg-2016*') \
+#			.query("wildcard",VOName=wildcardvoq)\
+#			.query("wildcard",CommonName=wildcardcommonnameq)\
+#			.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
+#			.filter(Q({"term":{"Resource.ResourceType":"BatchPilot"}}))
 			
 	response = resultset.execute()
 	return_code = response.success()	#True if the elasticsearch query completed without errors
@@ -66,14 +73,14 @@ class JobSuccessRateReporter(Reporter):
 	
 	for hit in resultset.scan():
             try:
-		globaljobid = hit['GlobalJobId'][0]
+		globaljobid = hit['GlobalJobId']
 		jobid = globaljobid.split('#')[1]+'@'+globaljobid[globaljobid.find('.')+1:globaljobid.find('#')]
-		outstr= "%s\t%s\t%s\t%s\t%s\t%s" % (hit['StartTime'][0],\
-						hit['EndTime'][0],\
+		outstr= "%s\t%s\t%s\t%s\t%s\t%s" % (hit['StartTime'],\
+						hit['EndTime'],\
 						jobid,\
-						hit['Host']['description'][0],\
-						hit['Host']['value'][0],\
-						hit['Resource']['ExitCode']
+						hit['Host_description'],\
+						hit['Host'],\
+						hit['Resource_ExitCode']
 						)
 		results.append(outstr)
 
