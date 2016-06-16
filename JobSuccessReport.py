@@ -1,12 +1,15 @@
 import sys
 import os
+import re
+from datetime import datetime
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search , Q
+
 import optparse
 import traceback
 import TextUtils
 import Configuration
 from Reporter import Reporter
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search , Q
 
 
 
@@ -48,10 +51,13 @@ class JobSuccessRateReporter(Reporter):
  	common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
 	wildcardvoq = '*'+self.vo.lower()+'*'
 	wildcardcommonnameq ='*'+common_name+'*'
-	starttimeq = self.start_time.replace('/','-').replace(' ','T')
-	endtimeq = self.end_time.replace('/','-').replace(' ','T')
-
-
+	
+	start_date = re.split('[/ :]', self.start_time)
+	starttimeq = datetime(int(start_date[0]),int(start_date[1]),int(start_date[2]),int(start_date[3]),int(start_date[4])).isoformat()
+	
+	end_date = re.split('[/ :]', self.end_time)
+	endtimeq = datetime(int(end_date[0]),int(end_date[1]),int(end_date[2]),int(end_date[3]),int(end_date[4])).isoformat()
+	
 	querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvoq,wildcardcommonnameq,starttimeq,endtimeq)
 
 	resultset = Search(using=client,index='gracc.osg.raw*') \
@@ -60,13 +66,6 @@ class JobSuccessRateReporter(Reporter):
         	.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
         	.filter(Q({"term":{"ResourceType":"Payload"}}))	
 
-
-	#resultset = Search(using=client,index='gracc-osg-2016*') \
-#			.query("wildcard",VOName=wildcardvoq)\
-#			.query("wildcard",CommonName=wildcardcommonnameq)\
-#			.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
-#			.filter(Q({"term":{"Resource.ResourceType":"BatchPilot"}}))
-			
 	response = resultset.execute()
 	return_code = response.success()	#True if the elasticsearch query completed without errors
         
