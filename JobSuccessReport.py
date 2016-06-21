@@ -45,7 +45,8 @@ class JobSuccessRateReporter(Reporter):
         self.connectStr = None
 
     def generate(self):
-	client=Elasticsearch(host='localhost',port=9200,timeout=60)
+	client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,timeout=60)
+	#client=Elasticsearch(timeout=60)
         results=[]
 	
  	common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
