@@ -2,6 +2,8 @@ import sys
 import os
 import re
 from datetime import datetime
+import logging
+
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
 
@@ -45,57 +47,64 @@ class JobSuccessRateReporter(Reporter):
         self.connectStr = None
 
     def generate(self):
-	client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,verify_certs=False,client_cert='gracc_cert/gracc-reports-dev.crt',client_key='gracc_cert/gracc-reports-dev.key',timeout=60)
-	#client=Elasticsearch(timeout=60)
+        logging.basicConfig(filename='example.log',level=logging.DEBUG)
+
+        logging.getLogger('elasticsearch.trace').addHandler(logging.StreamHandler())
+
+
+        #client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,verify_certs=False,client_cert='gracc_cert/gracc-reports-dev.crt',client_key='gracc_cert/gracc-reports-dev.key',timeout=60)
+        client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,verify_certs=True,client_cert='gracc_cert/gracc-reports-dev.crt',client_key='gracc_cert/gracc-reports-dev.key',timeout=60)
+        #client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,timeout=60)
+        #client=Elasticsearch(timeout=60)
         results=[]
-	
- 	common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
-	wildcardvoq = '*'+self.vo.lower()+'*'
-	wildcardcommonnameq ='*'+common_name+'*'
-	
-	start_date = re.split('[/ :]', self.start_time)
-	starttimeq = datetime(int(start_date[0]),int(start_date[1]),int(start_date[2]),int(start_date[3]),int(start_date[4])).isoformat()
-	
-	end_date = re.split('[/ :]', self.end_time)
-	endtimeq = datetime(int(end_date[0]),int(end_date[1]),int(end_date[2]),int(end_date[3]),int(end_date[4])).isoformat()
-	
-	#querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvoq,wildcardcommonnameq,starttimeq,endtimeq)
-
-	resultset = Search(using=client,index='gracc.osg.raw*') \
-        	.query("wildcard",VOName=wildcardvoq)\
-        	.query("wildcard",CommonName=wildcardcommonnameq)\
-        	.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
-        	.filter(Q({"term":{"ResourceType":"Payload"}}))	
-	
-
-	querystringverbose=resultset.to_dict()	
-
-	response = resultset.execute()
-	return_code_success = response.success()	#True if the elasticsearch query completed without errors
         
-	
-	for hit in response:
-	    print hit.to_dict()['RecordId']
-	
-	for hit in resultset.scan():
-            try:
-		globaljobid = hit['GlobalJobId']
-		jobid = globaljobid.split('#')[1]+'@'+globaljobid[globaljobid.find('.')+1:globaljobid.find('#')]
-		outstr= "%s\t%s\t%s\t%s\t%s\t%s" % (hit['StartTime'],\
-						hit['EndTime'],\
-						jobid,\
-						hit['Host_description'],\
-						hit['Host'],\
-						hit['Resource_ExitCode']
-						)
-		results.append(outstr)
+        common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
+        wildcardvoq = '*'+self.vo.lower()+'*'
+        wildcardcommonnameq ='*'+common_name+'*'
+        
+        start_date = re.split('[/ :]', self.start_time)
+        starttimeq = datetime(int(start_date[0]),int(start_date[1]),int(start_date[2]),int(start_date[3]),int(start_date[4])).isoformat()
+        
+        end_date = re.split('[/ :]', self.end_time)
+        endtimeq = datetime(int(end_date[0]),int(end_date[1]),int(end_date[2]),int(end_date[3]),int(end_date[4])).isoformat()
+        
+        #querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvoq,wildcardcommonnameq,starttimeq,endtimeq)
 
-		if self.verbose:
-			print >> sys.stdout, outstr
+        resultset = Search(using=client,index='gracc.osg.raw*') \
+                .query("wildcard",VOName=wildcardvoq)\
+                .query("wildcard",CommonName=wildcardcommonnameq)\
+                .filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
+                .filter(Q({"term":{"ResourceType":"Payload"}}))	
+        
+
+        querystringverbose=resultset.to_dict()	
+
+        response = resultset.execute()
+        return_code_success = response.success()	#True if the elasticsearch query completed without errors
+            
+        
+#        for hit in response:
+#            print hit.to_dict()['RecordId']
+        
+        for hit in resultset.scan():
+            try:
+                globaljobid = hit['GlobalJobId']
+                jobid = globaljobid.split('#')[1]+'@'+globaljobid[globaljobid.find('.')+1:globaljobid.find('#')]
+                outstr= "%s\t%s\t%s\t%s\t%s\t%s" % (hit['StartTime'],\
+                                hit['EndTime'],\
+                                jobid,\
+                                hit['Host_description'],\
+                                hit['Host'],\
+                                hit['Resource_ExitCode']
+                                )
+                results.append(outstr)
+
+                if self.verbose:
+                    print >> sys.stdout, outstr
             except KeyError as e:
                 pass #Figure this out
-	
-	
+        
+        
         #mysql_client_cfg = MySQLUtils.createClientConfig("main_db", self.config)
         #self.connectStr = MySQLUtils.getDbConnection("main_db", mysql_client_cfg, self.config)
         #common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
@@ -111,8 +120,8 @@ class JobSuccessRateReporter(Reporter):
         if not return_code_success:
             raise Exception('Error to access mysql database')
         
-	#Replaced with print statement in resultset.scan() loop
-	#if self.verbose:
+    #Replaced with print statement in resultset.scan() loop
+    #if self.verbose:
         #    print >> sys.stdout, results
 
         if len(results) == 1 and len(results[0].strip()) == 0:
@@ -120,7 +129,7 @@ class JobSuccessRateReporter(Reporter):
             return
         
     
-    	for line in results:
+        for line in results:
             tmp = line.split('\t')
             start_time = tmp[0].strip().replace('T',' ').replace('Z','')
             end_time = tmp[1].strip().replace('T',' ').replace('Z','')
@@ -136,7 +145,7 @@ class JobSuccessRateReporter(Reporter):
             if not self.clusters.has_key(clusterid):
                 self.clusters[clusterid] = []
             self.clusters[clusterid].append(job)
-	    
+        
 #        MySQLUtils.removeClientConfig(mysql_client_cfg)
 
     def send_report(self):
