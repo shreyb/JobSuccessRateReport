@@ -47,7 +47,7 @@ class JobSuccessRateReporter(Reporter):
         self.connectStr = None
 
     def generate(self):
-        logging.basicConfig(filename='example.log',level=logging.DEBUG)
+        logging.basicConfig(filename='example.log',level=logging.ERROR)
 
         logging.getLogger('elasticsearch.trace').addHandler(logging.StreamHandler())
 
@@ -69,8 +69,13 @@ class JobSuccessRateReporter(Reporter):
         endtimeq = datetime(int(end_date[0]),int(end_date[1]),int(end_date[2]),int(end_date[3]),int(end_date[4])).isoformat()
         
         #querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvoq,wildcardcommonnameq,starttimeq,endtimeq)
+        
+        indexpattern=indexpattern_generate(start_date,end_date)
+        
+        if self.verbose:
+            print >> sys.stdout,indexpattern
 
-        resultset = Search(using=client,index='gracc.osg.raw*') \
+        resultset = Search(using=client,index=indexpattern) \
                 .query("wildcard",VOName=wildcardvoq)\
                 .query("wildcard",CommonName=wildcardcommonnameq)\
                 .filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
@@ -223,9 +228,20 @@ class JobSuccessRateReporter(Reporter):
                      self.config.get("email", "test_to").split(", ")
         TextUtils.sendEmail(([], emails), "%s Production Jobs Success Rate on the OSG Sites (%s - %s)" %
                             (self.vo, self.start_time, self.end_time), {"html": text},
-			    ("Gratia Operation", "tlevshin@fnal.gov"), "localhost")
+			    ("Gratia Operation", "tlevshin@fnal.gov"), "smtp.fnal.gov")
 
         os.unlink(fn)
+
+def indexpattern_generate(start,end):
+    basepattern='gracc.osg.raw-'
+    if start[0]==end[0]:
+        basepattern+=str(start[0])
+        basepattern+='.'
+    if start[1]==end[1]:
+        basepattern+=str(start[1])
+        basepattern+='.'
+    basepattern+='*'
+    return basepattern
 
 
 def parse_opts():
