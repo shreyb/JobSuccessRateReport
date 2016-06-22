@@ -3,6 +3,7 @@ import os
 import re
 from datetime import datetime
 import logging
+from time import sleep
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
@@ -68,12 +69,11 @@ class JobSuccessRateReporter(Reporter):
         end_date = re.split('[/ :]', self.end_time)
         endtimeq = datetime(int(end_date[0]),int(end_date[1]),int(end_date[2]),int(end_date[3]),int(end_date[4])).isoformat()
         
-        #querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvoq,wildcardcommonnameq,starttimeq,endtimeq)
-        
         indexpattern=indexpattern_generate(start_date,end_date)
         
         if self.verbose:
             print >> sys.stdout,indexpattern
+            sleep(3)
 
         resultset = Search(using=client,index=indexpattern) \
                 .query("wildcard",VOName=wildcardvoq)\
