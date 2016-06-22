@@ -3,7 +3,7 @@ import os
 import re
 from datetime import datetime
 from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search , Q
+from elasticsearch_dsl import Search, Q
 
 import optparse
 import traceback
@@ -45,7 +45,7 @@ class JobSuccessRateReporter(Reporter):
         self.connectStr = None
 
     def generate(self):
-	client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,timeout=60)
+	client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,verify_certs=False,client_cert='gracc_cert/gracc-reports-dev.crt',client_key='gracc_cert/gracc-reports-dev.key',timeout=60)
 	#client=Elasticsearch(timeout=60)
         results=[]
 	
@@ -59,17 +59,23 @@ class JobSuccessRateReporter(Reporter):
 	end_date = re.split('[/ :]', self.end_time)
 	endtimeq = datetime(int(end_date[0]),int(end_date[1]),int(end_date[2]),int(end_date[3]),int(end_date[4])).isoformat()
 	
-	querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvoq,wildcardcommonnameq,starttimeq,endtimeq)
+	#querystringverbose = '{"bool":{"must":[{"wildcard":{"VOName":"%s"}},{"wildcard":{"CommonName":"%s"}}],"filter":[{"term":{"Resource.ResourceType":"BatchPilot"}},{"range":{"EndTime":{"gte": "%s","lt":"%s"}}}]}}' % (wildcardvoq,wildcardcommonnameq,starttimeq,endtimeq)
 
 	resultset = Search(using=client,index='gracc.osg.raw*') \
         	.query("wildcard",VOName=wildcardvoq)\
         	.query("wildcard",CommonName=wildcardcommonnameq)\
         	.filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
         	.filter(Q({"term":{"ResourceType":"Payload"}}))	
+	
+
+	querystringverbose=resultset.to_dict()	
 
 	response = resultset.execute()
-	return_code = response.success()	#True if the elasticsearch query completed without errors
+	return_code_success = response.success()	#True if the elasticsearch query completed without errors
         
+	
+	for hit in response:
+	    print hit.to_dict()['RecordId']
 	
 	for hit in resultset.scan():
             try:
@@ -102,7 +108,7 @@ class JobSuccessRateReporter(Reporter):
         if self.verbose:
             print >> sys.stdout, querystringverbose
         #results, return_code = MySQLUtils.RunQuery(select, self.connectStr)
-        if not return_code:
+        if not return_code_success:
             raise Exception('Error to access mysql database')
         
 	#Replaced with print statement in resultset.scan() loop
