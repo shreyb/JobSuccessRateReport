@@ -13,8 +13,7 @@ import traceback
 import TextUtils
 import Configuration
 from Reporter import Reporter
-
-
+from indexpattern import indexpattern_generate
 
 class Jobs:
     def __init__(self):
@@ -53,10 +52,7 @@ class JobSuccessRateReporter(Reporter):
         logging.getLogger('elasticsearch.trace').addHandler(logging.StreamHandler())
 
 
-        #client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,verify_certs=False,client_cert='gracc_cert/gracc-reports-dev.crt',client_key='gracc_cert/gracc-reports-dev.key',timeout=60)
         client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,verify_certs=True,client_cert='gracc_cert/gracc-reports-dev.crt',client_key='gracc_cert/gracc-reports-dev.key',timeout=60)
-        #client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,timeout=60)
-        #client=Elasticsearch(timeout=60)
         results=[]
         
         common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
@@ -86,10 +82,6 @@ class JobSuccessRateReporter(Reporter):
 
         response = resultset.execute()
         return_code_success = response.success()	#True if the elasticsearch query completed without errors
-            
-        
-#        for hit in response:
-#            print hit.to_dict()['RecordId']
         
         for hit in resultset.scan():
             try:
@@ -125,10 +117,6 @@ class JobSuccessRateReporter(Reporter):
         if not return_code_success:
             raise Exception('Error to access mysql database')
         
-    #Replaced with print statement in resultset.scan() loop
-    #if self.verbose:
-        #    print >> sys.stdout, results
-
         if len(results) == 1 and len(results[0].strip()) == 0:
             print >> sys.stdout, "Nothing to report"
             return
@@ -231,17 +219,6 @@ class JobSuccessRateReporter(Reporter):
 			    ("Gratia Operation", "tlevshin@fnal.gov"), "smtp.fnal.gov")
 
         os.unlink(fn)
-
-def indexpattern_generate(start,end):
-    basepattern='gracc.osg.raw-'
-    if start[0]==end[0]:
-        basepattern+=str(start[0])
-        basepattern+='.'
-    if start[1]==end[1]:
-        basepattern+=str(start[1])
-        basepattern+='.'
-    basepattern+='*'
-    return basepattern
 
 
 def parse_opts():
