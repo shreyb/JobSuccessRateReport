@@ -99,7 +99,7 @@ class JobSuccessRateReporter(Reporter):
                 if self.verbose:
                     print >> sys.stdout, outstr
             except KeyError as e:
-                pass #Figure this out
+                pass # We want to ignore records where one of the above keys isn't listed in the ES document.  This is consistent with how the old MySQL report behaved. 
         
         
         #mysql_client_cfg = MySQLUtils.createClientConfig("main_db", self.config)
