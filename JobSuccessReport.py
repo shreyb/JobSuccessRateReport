@@ -19,11 +19,13 @@ class Jobs:
     def __init__(self):
         self.jobs = {}
 
+
     def add_job(self, site, job):
         if not self.jobs.has_key(site):
             self.jobs[site] = []
 
         self.jobs[job.site].append(job)
+
 
 class Job:
     def __init__(self, end_time, start_time, jobid, site, host, exit__code):
@@ -45,6 +47,7 @@ class JobSuccessRateReporter(Reporter):
         self.run = Jobs()
         self.clusters = {}
         self.connectStr = None
+
 
     def generate(self):
         logging.basicConfig(filename='example.log',level=logging.ERROR)
@@ -96,22 +99,10 @@ class JobSuccessRateReporter(Reporter):
             except KeyError as e:
                 pass # We want to ignore records where one of the above keys isn't listed in the ES document.  This is consistent with how the old MySQL report behaved. 
         
-        
-        #mysql_client_cfg = MySQLUtils.createClientConfig("main_db", self.config)
-        #self.connectStr = MySQLUtils.getDbConnection("main_db", mysql_client_cfg, self.config)
-        #common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
-        #select = "select StartTime, EndTime, CONCAT(substring_index(substring(GlobalJobId, 28), '#', 1), '@', " + \
-        #         "substring_index(substring(GlobalJobId, 8), '#', 1)), HostDescription, substring_index(Host," + \
-        #         "' ', 1), r.Value as Status  from JobUsageRecord j,  Resource r where r.dbid = j.dbid and" + \
-        #         " r.Description = 'ExitCode' and  EndTime>= '" + self.start_time + "' and EndTime < '" + \
-        #         self.end_time + "' and ResourceType = 'BatchPilot' and CommonName like '%" + common_name + \
-        #         "%' and VOName like '%" + self.vo.lower() + "%' order by HostDescription, Host, GlobalJobId,  r.Value;"
         if self.verbose:
             print >> sys.stdout, querystringverbose
-        #results, return_code = MySQLUtils.RunQuery(select, self.connectStr)
         if not return_code_success:
             raise Exception('Error accessing ElasticSearch')
-        
         if len(results) == 1 and len(results[0].strip()) == 0:
             print >> sys.stdout, "Nothing to report"
             return
@@ -132,8 +123,7 @@ class JobSuccessRateReporter(Reporter):
             if not self.clusters.has_key(clusterid):
                 self.clusters[clusterid] = []
             self.clusters[clusterid].append(job)
-        
-#        MySQLUtils.removeClientConfig(mysql_client_cfg)
+    
 
     def send_report(self):
         table = ""
@@ -196,7 +186,6 @@ class JobSuccessRateReporter(Reporter):
         text = text.replace("$TABLE", table)
         text = text.replace("$VO", self.vo)
         fn = "%s-jobrate.%s" % (self.vo.lower(), self.start_time.replace("/", "-"))
-        
 
 	f = open(fn, "w")
         f.write(text)
