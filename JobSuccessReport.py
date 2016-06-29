@@ -48,22 +48,18 @@ class JobSuccessRateReporter(Reporter):
 
     def generate(self):
         logging.basicConfig(filename='example.log',level=logging.ERROR)
-
         logging.getLogger('elasticsearch.trace').addHandler(logging.StreamHandler())
 
-
         client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,verify_certs=True,client_cert='gracc_cert/gracc-reports-dev.crt',client_key='gracc_cert/gracc-reports-dev.key',timeout=60)
-        results=[]
         
-        common_name = self.config.get("query", "%s_commonname" % (self.vo.lower()))
+        wildcardcommonnameq = '*'+self.config.get("query", "%s_commonname" % (self.vo.lower()))+'*'
         wildcardvoq = '*'+self.vo.lower()+'*'
-        wildcardcommonnameq ='*'+common_name+'*'
         
         start_date = re.split('[/ :]', self.start_time)
-        starttimeq = datetime(int(start_date[0]),int(start_date[1]),int(start_date[2]),int(start_date[3]),int(start_date[4])).isoformat()
+        starttimeq = datetime(*[int(elt) for elt in start_date]).isoformat()
         
         end_date = re.split('[/ :]', self.end_time)
-        endtimeq = datetime(int(end_date[0]),int(end_date[1]),int(end_date[2]),int(end_date[3]),int(end_date[4])).isoformat()
+        endtimeq = datetime(*[int(elt) for elt in end_date]).isoformat()
         
         indexpattern=indexpattern_generate(start_date,end_date)
         
@@ -77,12 +73,12 @@ class JobSuccessRateReporter(Reporter):
                 .filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
                 .filter(Q({"term":{"ResourceType":"Payload"}}))	
         
-
         querystringverbose=resultset.to_dict()	
 
         response = resultset.execute()
         return_code_success = response.success()	#True if the elasticsearch query completed without errors
         
+        results=[]
         for hit in resultset.scan():
             try:
                 globaljobid = hit['GlobalJobId']
@@ -95,7 +91,6 @@ class JobSuccessRateReporter(Reporter):
                                 hit['Resource_ExitCode']
                                 )
                 results.append(outstr)
-
                 if self.verbose:
                     print >> sys.stdout, outstr
             except KeyError as e:
@@ -115,12 +110,11 @@ class JobSuccessRateReporter(Reporter):
             print >> sys.stdout, querystringverbose
         #results, return_code = MySQLUtils.RunQuery(select, self.connectStr)
         if not return_code_success:
-            raise Exception('Error to access mysql database')
+            raise Exception('Error accessing ElasticSearch')
         
         if len(results) == 1 and len(results[0].strip()) == 0:
             print >> sys.stdout, "Nothing to report"
             return
-        
     
         for line in results:
             tmp = line.split('\t')
