@@ -18,7 +18,7 @@ from indexpattern import indexpattern_generate
 class Jobs:
     def __init__(self):
         self.jobs = {}
-
+    
     def add_job(self, site, job):
         if not self.jobs.has_key(site):
             self.jobs[site] = []
