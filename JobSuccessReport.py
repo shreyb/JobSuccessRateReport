@@ -42,7 +42,7 @@ class JobSuccessRateReporter(Reporter):
         self.is_test = is_test
         self.vo = vo
         self.template = template
-        self.title = "Production Jobs Success Rate %s - %s" % (self.start_time, self.end_time)
+        self.title = "Production Jobs Success Rate {0} - {1}".format(self.start_time, self.end_time)
         self.run = Jobs()
         self.clusters = {}
         self.connectStr = None
@@ -51,10 +51,15 @@ class JobSuccessRateReporter(Reporter):
         logging.basicConfig(filename='example.log',level=logging.ERROR)
         logging.getLogger('elasticsearch.trace').addHandler(logging.StreamHandler())
 
-        client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],use_ssl=True,verify_certs=True,client_cert='gracc_cert/gracc-reports-dev.crt',client_key='gracc_cert/gracc-reports-dev.key',timeout=60)
+        client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],
+                             use_ssl = True,
+                             verify_certs = True,
+                             client_cert = 'gracc_cert/gracc-reports-dev.crt',
+                             client_key = 'gracc_cert/gracc-reports-dev.key',
+                             timeout = 60)
         
-        wildcardcommonnameq = '*'+self.config.get("query", "%s_commonname" % (self.vo.lower()))+'*'
-        wildcardvoq = '*'+self.vo.lower()+'*'
+        wildcardcommonnameq = '*{}*'.format(self.config.get("query", "{}_commonname".format(self.vo.lower())))
+        wildcardvoq = '*{}*'.format(self.vo.lower())
         
         start_date = re.split('[/ :]', self.start_time)
         starttimeq = datetime(*[int(elt) for elt in start_date]).isoformat()
@@ -77,20 +82,21 @@ class JobSuccessRateReporter(Reporter):
         querystringverbose=resultset.to_dict()	
 
         response = resultset.execute()
-        return_code_success = response.success()	#True if the elasticsearch query completed without errors
+        return_code_success = response.success()	# True if the elasticsearch query completed without errors
         
         results=[]
         for hit in resultset.scan():
             try:
                 globaljobid = hit['GlobalJobId']
                 jobid = globaljobid.split('#')[1]+'@'+globaljobid[globaljobid.find('.')+1:globaljobid.find('#')]
-                outstr= "%s\t%s\t%s\t%s\t%s\t%s" % (hit['StartTime'],\
-                                hit['EndTime'],\
-                                jobid,\
-                                hit['Host_description'],\
-                                hit['Host'],\
-                                hit['Resource_ExitCode']
-                                )
+                outstr = '{starttime}\t{endtime}\t{JobID}\t{hostdescription}\t{host}\t{exitcode}'.format(
+                                                     starttime = hit['StartTime'],
+                                                     endtime = hit['EndTime'],
+                                                     JobID = jobid,
+                                                     hostdescription = hit['Host_description'],
+                                                     host = hit['Host'],
+                                                     exitcode = hit['Resource_ExitCode']
+                                                    )
                 results.append(outstr)
                 if self.verbose:
                     print >> sys.stdout, outstr
