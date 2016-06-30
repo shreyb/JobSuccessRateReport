@@ -84,13 +84,21 @@ class JobSuccessRateReporter(Reporter):
             try:
                 globaljobid = hit['GlobalJobId']
                 jobid = globaljobid.split('#')[1]+'@'+globaljobid[globaljobid.find('.')+1:globaljobid.find('#')]
-                outstr= "%s\t%s\t%s\t%s\t%s\t%s" % (hit['StartTime'],\
-                                hit['EndTime'],\
-                                jobid,\
-                                hit['Host_description'],\
-                                hit['Host'],\
-                                hit['Resource_ExitCode']
-                                )
+                #outstr= "%s\t%s\t%s\t%s\t%s\t%s" % (hit['StartTime'],\
+                #                hit['EndTime'],\
+                #                jobid,\
+                #                hit['Host_description'],\
+                #                hit['Host'],\
+                #                hit['Resource_ExitCode']
+                #                )
+                outstr = '{starttime}\t{endtime}\t{JobID}\t{hostdescription}\t{host}\t{exitcode}'.format(
+                                                     starttime = hit['StartTime'],
+                                                     endtime = hit['EndTime'],
+                                                     JobID = jobid,
+                                                     hostdescription = hit['Host_description'],
+                                                     host = hit['Host'],
+                                                     exitcode = hit['Resource_ExitCode']
+                                                    )
                 results.append(outstr)
                 if self.verbose:
                     print >> sys.stdout, outstr
