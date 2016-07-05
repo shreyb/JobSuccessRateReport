@@ -4,10 +4,10 @@ import re
 from datetime import datetime
 import logging
 from time import sleep
-import certifi
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
+import certifi
 
 import optparse
 import traceback
@@ -56,7 +56,7 @@ class JobSuccessRateReporter(Reporter):
                              use_ssl = True,
                              verify_certs = True,
                              ca_certs = certifi.where(),
-			     client_cert = 'gracc_cert/gracc-reports-dev.crt',
+            			     client_cert = 'gracc_cert/gracc-reports-dev.crt',
                              client_key = 'gracc_cert/gracc-reports-dev.key',
                              timeout = 60)
         
