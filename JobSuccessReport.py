@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 import logging
 from time import sleep
+import certifi
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
@@ -54,7 +55,8 @@ class JobSuccessRateReporter(Reporter):
         client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],
                              use_ssl = True,
                              verify_certs = True,
-                             client_cert = 'gracc_cert/gracc-reports-dev.crt',
+                             ca_certs = certifi.where(),
+			     client_cert = 'gracc_cert/gracc-reports-dev.crt',
                              client_key = 'gracc_cert/gracc-reports-dev.key',
                              timeout = 60)
         
