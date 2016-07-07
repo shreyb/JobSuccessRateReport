@@ -49,14 +49,12 @@ class JobSuccessRateReporter(Reporter):
         self.connectStr = None
 
     def generate(self):
-        logging.basicConfig(filename='example.log',level=logging.ERROR)
-        logging.getLogger('elasticsearch.trace').addHandler(logging.StreamHandler())
 
         client=Elasticsearch(['https://fifemon-es.fnal.gov'],
                              use_ssl = True,
                              verify_certs = True,
                              ca_certs = certifi.where(),
-            			     client_cert = 'gracc_cert/gracc-reports-dev.crt',
+       			     client_cert = 'gracc_cert/gracc-reports-dev.crt',
                              client_key = 'gracc_cert/gracc-reports-dev.key',
                              timeout = 60)
         
@@ -232,6 +230,9 @@ def parse_opts():
                       dest="end", help="report end date YYYY/MM/DD")
     parser.add_option("-d", "--dryrun", action="store_true", dest="is_test", default=False,
                       help="send emails only to _testers")
+    parser.add_option("-D", "--debug",
+                      action="store_true", dest="debug", default=False,
+                      help="print detailed debug messages to log file")
 
     options, arguments = parser.parse_args()
     Configuration.checkRequiredArguments(options, parser)
@@ -240,6 +241,13 @@ def parse_opts():
 
 if __name__ == "__main__":
     opts, args = parse_opts()
+    
+    if opts.debug:
+	logging.basicConfig(filename='jobsuccessreport.log',level=logging.DEBUG)
+    else:
+	logging.basicConfig(filename='jobsuccessreport.log',level=logging.ERROR)
+    logging.getLogger('elasticsearch.trace').addHandler(logging.StreamHandler())
+    
     try:
         config = Configuration.Configuration()
         config.configure(opts.config)
