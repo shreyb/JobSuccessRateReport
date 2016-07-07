@@ -52,7 +52,7 @@ class JobSuccessRateReporter(Reporter):
         logging.basicConfig(filename='example.log',level=logging.ERROR)
         logging.getLogger('elasticsearch.trace').addHandler(logging.StreamHandler())
 
-        client=Elasticsearch(['https://gracc.opensciencegrid.org/e'],
+        client=Elasticsearch(['https://fifemon-es.fnal.gov'],
                              use_ssl = True,
                              verify_certs = True,
                              ca_certs = certifi.where(),
@@ -60,6 +60,7 @@ class JobSuccessRateReporter(Reporter):
                              client_key = 'gracc_cert/gracc-reports-dev.key',
                              timeout = 60)
         
+
         wildcardcommonnameq = '*{}*'.format(self.config.get("query", "{}_commonname".format(self.vo.lower())))
         wildcardvoq = '*{}*'.format(self.vo.lower())
         
