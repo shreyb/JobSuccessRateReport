@@ -62,10 +62,10 @@ class JobSuccessRateReporter(Reporter):
         wildcardcommonnameq = '*{}*'.format(self.config.get("query", "{}_commonname".format(self.vo.lower())))
         wildcardvoq = '*{}*'.format(self.vo.lower())
         
-        start_date = re.split('[/ :]', self.start_time)
+        start_date = re.split('[-/ :]', self.start_time)
         starttimeq = datetime(*[int(elt) for elt in start_date]).isoformat()
         
-        end_date = re.split('[/ :]', self.end_time)
+        end_date = re.split('[-/ :]', self.end_time)
         endtimeq = datetime(*[int(elt) for elt in end_date]).isoformat()
         
         indexpattern=indexpattern_generate(start_date,end_date)
@@ -243,9 +243,9 @@ def parse_opts():
                       dest="template", type="string",
                       help="template_file")
     parser.add_option("-s", "--start", type="string",
-                      dest="start", help="report start date YYYY/MM/DD HH:MM:DD (required)")
+                      dest="start", help="report start date YYYY/MM/DD HH:MM:DD or YYYY-MM-DD HH:MM:DD (required)")
     parser.add_option("-e", "--end", type="string",
-                      dest="end", help="report end date YYYY/MM/DD")
+                      dest="end", help="report end date YYYY/MM/DD HH:MM:DD or YYYY-MM-DD HH:MM:DD")
     parser.add_option("-d", "--dryrun", action="store_true", dest="is_test", default=False,
                       help="send emails only to _testers")
     parser.add_option("-D", "--debug",
