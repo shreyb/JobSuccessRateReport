@@ -220,7 +220,7 @@ class JobSuccessRateReporter(Reporter):
                                                                                                 self.start_time, 
                                                                                                 self.end_time), 
                             {"html": text},
-			                ("Gratia Operation", "tlevshin@fnal.gov"), 
+			                ("Gratia Operation", "sbhat@fnal.gov"), 
                             "smtp.fnal.gov")
 
         os.unlink(fn)
