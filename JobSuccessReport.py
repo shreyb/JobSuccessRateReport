@@ -53,7 +53,7 @@ class JobSuccessRateReporter(Reporter):
         client=Elasticsearch(['https://fifemon-es.fnal.gov'],
                              use_ssl = True,
                              verify_certs = True,
-                             ca_certs = certifi.where(),
+                             ca_certs = '/etc/grid-security/certificates/cilogon-osg.pem',
        			     client_cert = 'gracc_cert/gracc-reports-dev.crt',
                              client_key = 'gracc_cert/gracc-reports-dev.key',
                              timeout = 60)
