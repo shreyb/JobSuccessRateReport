@@ -74,7 +74,7 @@ class JobSuccessRateReporter(Reporter):
             print >> sys.stdout,indexpattern
             sleep(3)
 
-        resultset = Search(using=client,index=indexpattern) \
+        resultset = Search(using=client,index = indexpattern) \
                 .query("wildcard",VOName=wildcardvoq)\
                 .query("wildcard",CommonName=wildcardcommonnameq)\
                 .filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
@@ -148,11 +148,17 @@ class JobSuccessRateReporter(Reporter):
                 failures.append(job)
             if total_jobs_failed == 0:
                 continue
-            job_table += '\n<tr><td align = "left">%s</td><td align = "right">%s</td><td align = "right">%s</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>' \
-                % (cid, total_jobs, total_jobs_failed,)
+            job_table += '\n<tr><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'.format(cid, 
+                                                                                                                                                                                    total_jobs, 
+                                                                                                                                                                                    total_jobs_failed)
             for job in failures:
-                job_table += '\n<tr><td></td><td></td><td></td><td align = "left">%s</td><td align = "left">%s</td><td align = "left">%s</td><td align = "right">%s</td><td align = "right">%s</td><td align = "right">%s</td></tr>' % \
-                             (job.jobid, job.start_time, job.end_time, job.site, job.host, job.exit_code)
+                job_table += '\n<tr><td></td><td></td><td></td><td align = "left">{}</td><td align = "left">{}</td><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td></tr>'.format(job.jobid, 
+                                                                                                                                                                                                                                            job.start_time, 
+                                                                                                                                                                                                                                            job.end_time, 
+                                                                                                                                                                                                                                            job.site, 
+                                                                                                                                                                                                                                            job.host, 
+                                                                                                                                                                                                                                            job.exit_code)
+        
         total_jobs = 0
 
         for key, jobs in self.run.jobs.items():
@@ -169,19 +175,26 @@ class JobSuccessRateReporter(Reporter):
                     failures[job.host][job.exit_code] += 1
             total_jobs += total
             total_failed += failed
-            table_summary += '\n<tr><td align = "left">%s</td><td align = "right">%s</td><td align = "right">%s</td><td align = "right">%s</td></tr>' % \
-                             (key, total, failed, round((total - failed) * 100. / total, 1))
-            table += '\n<tr><td align = "left">%s</td><td align = "right">%s</td><td align = "right">%s</td><td align = "right">%s</td><td></td><td></td><td></td></tr>' % \
-                     (key, total, failed, round((total - failed) * 100. / total, 1))
+            table_summary += '\n<tr><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td></tr>'.format(key, 
+                                                                                                                                                             total, 
+                                                                                                                                                             failed, 
+                                                                                                                                                             round((total - failed) * 100. / total, 1))
+            table += '\n<tr><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td><td></td><td></td><td></td></tr>'.format(key, 
+                                                                                                                                                                                total, 
+                                                                                                                                                                                failed, 
+                                                                                                                                                                                round((total - failed) * 100. / total, 1))
             for host, errors in failures.items():
                 for code, count in errors.items():
-                    table += '\n<tr><td></td><td></td><td></td><td></td><td align = "left">%s</td><td align = "right">%s</td><td align = "right">%s</td></tr>' \
-                        % (host, code, count)
+                    table += '\n<tr><td></td><td></td><td></td><td></td><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td></tr>'.format(host, 
+                                                                                                                                                                      code, 
+                                                                                                                                                                      count)
 
-        table += '\n<tr><td align = "left">Total</td><td align = "right">%s</td><td align = "right">%s</td><td align = "right">%s</td><td></td><td></td><td></td></tr>' % \
-                 (total_jobs, total_failed, round((total_jobs - total_failed) * 100. / total_jobs, 1))
-        table_summary += '\n<tr><td align = "left">Total</td><td align = "right">%s</td><td align = "right">%s</td><td align = "right">%s</td></td></tr>' % \
-                         (total_jobs, total_failed, round((total_jobs - total_failed) * 100. / total_jobs, 1))
+        table += '\n<tr><td align = "left">Total</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td><td></td><td></td><td></td></tr>'.format(total_jobs, 
+                                                                                                                                                                               total_failed, 
+                                                                                                                                                                               round((total_jobs - total_failed) * 100. / total_jobs, 1))
+        table_summary += '\n<tr><td align = "left">Total</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td></td></tr>'.format(total_jobs, 
+                                                                                                                                                                 total_failed, 
+                                                                                                                                                                 round((total_jobs - total_failed) * 100. / total_jobs, 1))
         text = "".join(open(self.template).readlines())
         text = text.replace("$START", self.start_time)
         text = text.replace("$END", self.end_time)
@@ -189,21 +202,26 @@ class JobSuccessRateReporter(Reporter):
         text = text.replace("$TABLE_JOBS", job_table)
         text = text.replace("$TABLE", table)
         text = text.replace("$VO", self.vo)
-        fn = "%s-jobrate.%s" % (self.vo.lower(), self.start_time.replace("/", "-"))
+        fn = "{}-jobrate.{}".format(self.vo.lower(), 
+                                    self.start_time.replace("/", "-"))
 
 	f = open(fn, "w")
         f.write(text)
         f.close()
 	
-	#The part that actually emails people.  Will need to figure out why this didn't work.
+	#The part that actually emails people. 
 	if self.is_test:
             emails = self.config.get("email", "test_to").split(", ")
         else:
-            emails = self.config.get("email", "%s_email" % (self.vo.lower())).split(", ") + \
+            emails = self.config.get("email", "{}_email" % (self.vo.lower())).split(", ") + \
                      self.config.get("email", "test_to").split(", ")
-        TextUtils.sendEmail(([], emails), "%s Production Jobs Success Rate on the OSG Sites (%s - %s)" %
-                            (self.vo, self.start_time, self.end_time), {"html": text},
-			    ("Gratia Operation", "tlevshin@fnal.gov"), "smtp.fnal.gov")
+        TextUtils.sendEmail(([], emails), 
+                            "{} Production Jobs Success Rate on the OSG Sites ({} - {})".format(self.vo, 
+                                                                                                self.start_time, 
+                                                                                                self.end_time), 
+                            {"html": text},
+			                ("Gratia Operation", "tlevshin@fnal.gov"), 
+                            "smtp.fnal.gov")
 
         os.unlink(fn)
 
