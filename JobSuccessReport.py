@@ -243,9 +243,9 @@ def parse_opts():
                       dest="template", type="string",
                       help="template_file")
     parser.add_option("-s", "--start", type="string",
-                      dest="start", help="report start date YYYY/MM/DD HH:MM:DD or YYYY-MM-DD HH:MM:DD (required)")
+                      dest="start", help="report start date YYYY/MM/DD HH:mm:SS or YYYY-MM-DD HH:mm:SS (required)")
     parser.add_option("-e", "--end", type="string",
-                      dest="end", help="report end date YYYY/MM/DD HH:MM:DD or YYYY-MM-DD HH:MM:DD")
+                      dest="end", help="report end date YYYY/MM/DD HH:mm:SS or YYYY-MM-SS HH:mm:SS")
     parser.add_option("-d", "--dryrun", action="store_true", dest="is_test", default=False,
                       help="send emails only to _testers")
     parser.add_option("-D", "--debug",
