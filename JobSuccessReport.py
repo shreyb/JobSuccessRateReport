@@ -49,16 +49,16 @@ class JobSuccessRateReporter(Reporter):
         self.connectStr = None
 
     def generate(self):
-
+        # Set up elasticsearch client
         client=Elasticsearch(['https://fifemon-es.fnal.gov'],
                              use_ssl = True,
                              verify_certs = True,
                              ca_certs = '/etc/grid-security/certificates/cilogon-osg.pem',
-       			     client_cert = 'gracc_cert/gracc-reports-dev.crt',
+       			             client_cert = 'gracc_cert/gracc-reports-dev.crt',
                              client_key = 'gracc_cert/gracc-reports-dev.key',
                              timeout = 60)
         
-
+        # Set up our search parameters
         wildcardcommonnameq = '*{}*'.format(self.config.get("query", "{}_commonname".format(self.vo.lower())))
         wildcardvoq = '*{}*'.format(self.vo.lower())
         
@@ -68,23 +68,24 @@ class JobSuccessRateReporter(Reporter):
         end_date = re.split('[-/ :]', self.end_time)
         endtimeq = datetime(*[int(elt) for elt in end_date]).isoformat()
         
+        # Generate the index pattern based on the start and end dates
         indexpattern=indexpattern_generate(start_date,end_date)
         
         if self.verbose:
             print >> sys.stdout,indexpattern
             sleep(3)
-
+        
+        # Elasticsearch query
         resultset = Search(using=client,index = indexpattern) \
                 .query("wildcard",VOName=wildcardvoq)\
                 .query("wildcard",CommonName=wildcardcommonnameq)\
                 .filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
                 .filter(Q({"term":{"ResourceType":"Payload"}}))	
         
-        querystringverbose=resultset.to_dict()	
-
         response = resultset.execute()
         return_code_success = response.success()	# True if the elasticsearch query completed without errors
-        
+       
+        # Compile results into array
         results=[]
         for hit in resultset.scan():
             try:
@@ -105,13 +106,15 @@ class JobSuccessRateReporter(Reporter):
                 pass # We want to ignore records where one of the above keys isn't listed in the ES document.  This is consistent with how the old MySQL report behaved. 
         
         if self.verbose:
+            querystringverbose=resultset.to_dict()	
             print >> sys.stdout, querystringverbose
         if not return_code_success:
             raise Exception('Error accessing ElasticSearch')
         if len(results) == 1 and len(results[0].strip()) == 0:
             print >> sys.stdout, "Nothing to report"
             return
-    
+        
+        # Grab each line in results, instantiate Job class for each one, and add to clusters
         for line in results:
             tmp = line.split('\t')
             start_time = tmp[0].strip().replace('T',' ').replace('Z','')
@@ -137,6 +140,8 @@ class JobSuccessRateReporter(Reporter):
             return
         table_summary = ""
         job_table = ""
+        
+        # Look in clusters, figure out whether job failed or succeded, categorize appropriately, and generate HTML line for total jobs failed by cluster
         for cid, jobs in self.clusters.items():
             total_jobs = len(jobs)
             failures = []
@@ -151,6 +156,7 @@ class JobSuccessRateReporter(Reporter):
             job_table += '\n<tr><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'.format(cid, 
                                                                                                                                                                                     total_jobs, 
                                                                                                                                                                                     total_jobs_failed)
+            # Generate HTML line for each failed job
             for job in failures:
                 job_table += '\n<tr><td></td><td></td><td></td><td align = "left">{}</td><td align = "left">{}</td><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td></tr>'.format(job.jobid, 
                                                                                                                                                                                                                                             job.start_time, 
@@ -160,7 +166,8 @@ class JobSuccessRateReporter(Reporter):
                                                                                                                                                                                                                                             job.exit_code)
         
         total_jobs = 0
-
+        
+        # Compile count of failed jobs, calculate job success rate
         for key, jobs in self.run.jobs.items():
             failed = 0
             total = len(jobs)
@@ -195,6 +202,7 @@ class JobSuccessRateReporter(Reporter):
         table_summary += '\n<tr><td align = "left">Total</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td></td></tr>'.format(total_jobs, 
                                                                                                                                                                  total_failed, 
                                                                                                                                                                  round((total_jobs - total_failed) * 100. / total_jobs, 1))
+        # Grab HTML template, replace variables shown
         text = "".join(open(self.template).readlines())
         text = text.replace("$START", self.start_time)
         text = text.replace("$END", self.end_time)
@@ -202,12 +210,13 @@ class JobSuccessRateReporter(Reporter):
         text = text.replace("$TABLE_JOBS", job_table)
         text = text.replace("$TABLE", table)
         text = text.replace("$VO", self.vo)
+
+        # Generate HTML file to send
         fn = "{}-jobrate.{}".format(self.vo.lower(), 
                                     self.start_time.replace("/", "-"))
 
-        f = open(fn, "w")
-        f.write(text)
-        f.close()
+        with open(fn,'w') as f:
+            f.write(text)
         
         #The part that actually emails people. 
         if self.is_test:
@@ -224,7 +233,7 @@ class JobSuccessRateReporter(Reporter):
                                 ("Gratia Operation", "sbhat@fnal.gov"), 
                                 "smtp.fnal.gov")
 
-        os.unlink(fn)
+        os.unlink(fn)       # Delete HTML file
 
 
 def parse_opts():
