@@ -205,23 +205,24 @@ class JobSuccessRateReporter(Reporter):
         fn = "{}-jobrate.{}".format(self.vo.lower(), 
                                     self.start_time.replace("/", "-"))
 
-	f = open(fn, "w")
+        f = open(fn, "w")
         f.write(text)
         f.close()
-	
-	#The part that actually emails people. 
-	if self.is_test:
-            emails = self.config.get("email", "test_to").split(", ")
+        
+        #The part that actually emails people. 
+        if self.is_test:
+            emails = re.split('[; ,]',self.config.get("email", "test_to"))
         else:
-            emails = self.config.get("email", "{}_email" % (self.vo.lower())).split(", ") + \
-                     self.config.get("email", "test_to").split(", ")
+            emails = re.split('[; ,]',self.config.get("email", "{}_email".format(self.vo.lower()))) + \
+                     re.split('[: ,]',self.config.get("email", "test_to"))
+        
         TextUtils.sendEmail(([], emails), 
-                            "{} Production Jobs Success Rate on the OSG Sites ({} - {})".format(self.vo, 
+                                "{} Production Jobs Success Rate on the OSG Sites ({} - {})".format(self.vo, 
                                                                                                 self.start_time, 
                                                                                                 self.end_time), 
-                            {"html": text},
-			                ("Gratia Operation", "sbhat@fnal.gov"), 
-                            "smtp.fnal.gov")
+                                {"html": text},
+                                ("Gratia Operation", "sbhat@fnal.gov"), 
+                                "smtp.fnal.gov")
 
         os.unlink(fn)
 
