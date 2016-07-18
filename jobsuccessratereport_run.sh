@@ -4,7 +4,7 @@ VOS="UBooNE NOvA DUNE Mu2e"
 YESTERDAY=`date --date yesterday +"%F %T"`
 TODAY=`date +"%F %T"`
 
-cd /home/sbhat/JobSuccessReport
+cd /home/sbhat/JobSuccessRateReport
 
 for vo in ${VOS}
 do
