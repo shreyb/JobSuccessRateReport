@@ -90,13 +90,14 @@ class JobSuccessRateReporter(Reporter):
         for hit in resultset.scan():
             try:
                 globaljobid = hit['GlobalJobId']
+                realhost = re.sub('\s\(primary\)','',hit['Host'])
                 jobid = globaljobid.split('#')[1]+'@'+globaljobid[globaljobid.find('.')+1:globaljobid.find('#')]
                 outstr = '{starttime}\t{endtime}\t{JobID}\t{hostdescription}\t{host}\t{exitcode}'.format(
                                                      starttime = hit['StartTime'],
                                                      endtime = hit['EndTime'],
                                                      JobID = jobid,
                                                      hostdescription = hit['Host_description'],
-                                                     host = hit['Host'],
+                                                     host = realhost,
                                                      exitcode = hit['Resource_ExitCode']
                                                     )
                 results.append(outstr)
