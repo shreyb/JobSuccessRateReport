@@ -6,6 +6,8 @@ TODAY=`date +"%F %T"`
 
 cd /home/sbhat/JobSuccessRateReport
 
+echo "START" `date` >> jobsuccessratereport_run.log
+
 for vo in ${VOS}
 do
 	echo $vo
@@ -13,4 +15,5 @@ do
 done
 
  
+echo "END" `date` >> jobsuccessratereport_run.log
 
