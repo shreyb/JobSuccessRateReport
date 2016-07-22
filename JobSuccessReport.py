@@ -145,7 +145,6 @@ class JobSuccessRateReporter(Reporter):
         
         self.add_to_clusters(results)               # Parse our results and create clusters objects for each
         return
-
     
     def send_report(self):
         table = ""

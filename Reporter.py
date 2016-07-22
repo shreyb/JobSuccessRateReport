@@ -8,7 +8,6 @@ from Configuration import checkRequiredArguments
 class Reporter(object):
     __metaclass__ = abc.ABCMeta
 
-
     def __init__(self,config,start,end=None,verbose=False):
         """Constructor for OSGReporter 
         Args:
@@ -25,7 +24,7 @@ class Reporter(object):
         self.end_time=end
 
     def format_report(self):
-	pass
+	    pass
 
     @abc.abstractmethod
     def query(self):
@@ -49,7 +48,6 @@ class Reporter(object):
     @staticmethod
     def parse_opts():
         """Parses command line options"""
-
         usage = "Usage: %prog [options]"
         parser = optparse.OptionParser(usage)
         parser.add_option("-c", "--config", dest="config", type="string",
