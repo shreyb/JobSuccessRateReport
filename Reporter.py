@@ -1,7 +1,14 @@
 from MySQLUtils  import MySQLUtils
 import TextUtils
+import abc
+import optparse
+from Configuration import checkRequiredArguments
 
-class Reporter:
+
+class Reporter(object):
+    __metaclass__ = abc.ABCMeta
+
+
     def __init__(self,config,start,end=None,verbose=False):
         """Constructor for OSGReporter 
         Args:
@@ -20,6 +27,12 @@ class Reporter:
     def format_report(self):
 	pass
 
+    @abc.abstractmethod
+    def query(self):
+        """Method to define subclass Elasticsearch query"""
+        pass
+    
+    @abc.abstractmethod
     def send_report(self,report_type="test"):
         """Send reports as ascii, csv, html attachements """
         text={}
@@ -32,4 +45,36 @@ class Reporter:
         emails=self.config.get("email","%s_to" % (report_type,)).split(",")
         names=self.config.get("email","%s_realname" % (report_type,)).split(",")
         TextUtils.sendEmail((names,emails),self.title,text, ("Gratia Operation",self.config.get("email","from")),self.config.get("email","smtphost"))
+
+    @staticmethod
+    def parse_opts():
+        """Parses command line options"""
+
+        usage = "Usage: %prog [options]"
+        parser = optparse.OptionParser(usage)
+        parser.add_option("-c", "--config", dest="config", type="string",
+                          help="report configuration file (required)")
+        parser.add_option("-v", "--verbose",
+                          action="store_true", dest="verbose", default=False,
+                          help="print debug messages to stdout")
+        parser.add_option("-E", "--experiement",
+                          dest="vo", type="string",
+                          help="experiment name")
+        parser.add_option("-T", "--template",
+                          dest="template", type="string",
+                          help="template_file")
+        parser.add_option("-s", "--start", type="string",
+                          dest="start", help="report start date YYYY/MM/DD HH:mm:SS or YYYY-MM-DD HH:mm:SS (required)")
+        parser.add_option("-e", "--end", type="string",
+                          dest="end", help="report end date YYYY/MM/DD HH:mm:SS or YYYY-MM-SS HH:mm:SS")
+        parser.add_option("-d", "--dryrun", action="store_true", dest="is_test", default=False,
+                          help="send emails only to _testers")
+        parser.add_option("-D", "--debug",
+                          action="store_true", dest="debug", default=False,
+                          help="print detailed debug messages to log file")
+        
+        options, arguments = parser.parse_args()
+        checkRequiredArguments(options, parser)
+        return options, arguments        
+
 
