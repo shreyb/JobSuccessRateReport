@@ -48,16 +48,8 @@ class JobSuccessRateReporter(Reporter):
         self.clusters = {}
         self.connectStr = None
 
-    def generate(self):
-        # Set up elasticsearch client
-        client=Elasticsearch(['https://fifemon-es.fnal.gov'],
-                             use_ssl = True,
-                             verify_certs = True,
-                             ca_certs = '/etc/grid-security/certificates/cilogon-osg.pem',
-       			             client_cert = 'gracc_cert/gracc-reports-dev.crt',
-                             client_key = 'gracc_cert/gracc-reports-dev.key',
-                             timeout = 60)
-        
+    def query(self,client):
+        """Method that actually queries elasticsearch"""
         # Set up our search parameters
         wildcardcommonnameq = '*{}*'.format(self.config.get("query", "{}_commonname".format(self.vo.lower())))
         wildcardvoq = '*{}*'.format(self.vo.lower())
@@ -82,9 +74,9 @@ class JobSuccessRateReporter(Reporter):
                 .filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
                 .filter(Q({"term":{"ResourceType":"Payload"}}))	
         
-        response = resultset.execute()
-        return_code_success = response.success()	# True if the elasticsearch query completed without errors
-       
+        return resultset
+
+    def generate_result_array(self, resultset):
         # Compile results into array
         results=[]
         for hit in resultset.scan():
@@ -105,16 +97,9 @@ class JobSuccessRateReporter(Reporter):
                     print >> sys.stdout, outstr
             except KeyError as e:
                 pass # We want to ignore records where one of the above keys isn't listed in the ES document.  This is consistent with how the old MySQL report behaved. 
-        
-        if self.verbose:
-            querystringverbose=resultset.to_dict()	
-            print >> sys.stdout, querystringverbose
-        if not return_code_success:
-            raise Exception('Error accessing ElasticSearch')
-        if len(results) == 1 and len(results[0].strip()) == 0:
-            print >> sys.stdout, "Nothing to report"
-            return
-        
+        return results
+    
+    def add_to_clusters(self,results):
         # Grab each line in results, instantiate Job class for each one, and add to clusters
         for line in results:
             tmp = line.split('\t')
@@ -132,6 +117,35 @@ class JobSuccessRateReporter(Reporter):
             if not self.clusters.has_key(clusterid):
                 self.clusters[clusterid] = []
             self.clusters[clusterid].append(job)
+        return
+
+    def generate(self):
+        # Set up elasticsearch client
+        client=Elasticsearch(['https://fifemon-es.fnal.gov'],
+                             use_ssl = True,
+                             verify_certs = True,
+                             ca_certs = '/etc/grid-security/certificates/cilogon-osg.pem',
+       			             client_cert = 'gracc_cert/gracc-reports-dev.crt',
+                             client_key = 'gracc_cert/gracc-reports-dev.key',
+                             timeout = 60)
+        
+        resultset = self.query(client)              # Generate Search object for ES
+        response = resultset.execute()              # Execute that Search
+        return_code_success = response.success()	# True if the elasticsearch query completed without errors
+        results = self.generate_result_array(resultset)  # Format our resultset into an array we use later 
+        
+        if self.verbose:
+            querystringverbose=resultset.to_dict()	
+            print >> sys.stdout, querystringverbose
+        if not return_code_success:
+            raise Exception('Error accessing ElasticSearch')
+        if len(results) == 1 and len(results[0].strip()) == 0:
+            print >> sys.stdout, "Nothing to report"
+            return
+        
+        self.add_to_clusters(results)               # Parse our results and create clusters objects for each
+        return
+
     
     def send_report(self):
         table = ""
@@ -237,39 +251,8 @@ class JobSuccessRateReporter(Reporter):
         os.unlink(fn)       # Delete HTML file
 
 
-def parse_opts():
-    """Parses command line options"""
-
-    usage = "Usage: %prog [options]"
-    parser = optparse.OptionParser(usage)
-    parser.add_option("-c", "--config", dest="config", type="string",
-                      help="report configuration file (required)")
-    parser.add_option("-v", "--verbose",
-                      action="store_true", dest="verbose", default=False,
-                      help="print debug messages to stdout")
-    parser.add_option("-E", "--experiement",
-                      dest="vo", type="string",
-                      help="experiment name")
-    parser.add_option("-T", "--template",
-                      dest="template", type="string",
-                      help="template_file")
-    parser.add_option("-s", "--start", type="string",
-                      dest="start", help="report start date YYYY/MM/DD HH:mm:SS or YYYY-MM-DD HH:mm:SS (required)")
-    parser.add_option("-e", "--end", type="string",
-                      dest="end", help="report end date YYYY/MM/DD HH:mm:SS or YYYY-MM-SS HH:mm:SS")
-    parser.add_option("-d", "--dryrun", action="store_true", dest="is_test", default=False,
-                      help="send emails only to _testers")
-    parser.add_option("-D", "--debug",
-                      action="store_true", dest="debug", default=False,
-                      help="print detailed debug messages to log file")
-
-    options, arguments = parser.parse_args()
-    Configuration.checkRequiredArguments(options, parser)
-    return options, arguments
-
-
 if __name__ == "__main__":
-    opts, args = parse_opts()
+    opts, args = Reporter.parse_opts()
     
     if opts.debug:
 	logging.basicConfig(filename='jobsuccessreport.log',level=logging.DEBUG)
