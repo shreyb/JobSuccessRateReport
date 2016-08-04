@@ -74,6 +74,9 @@ class JobSuccessRateReporter(Reporter):
                 .filter("range",EndTime={"gte":starttimeq,"lt":endtimeq})\
                 .filter(Q({"term":{"ResourceType":"Payload"}}))	
         
+        if self.verbose:
+            print resultset.to_dict() 
+        
         return resultset
 
     def generate_result_array(self, resultset):
@@ -134,9 +137,6 @@ class JobSuccessRateReporter(Reporter):
         return_code_success = response.success()	# True if the elasticsearch query completed without errors
         results = self.generate_result_array(resultset)  # Format our resultset into an array we use later 
         
-        if self.verbose:
-            querystringverbose=resultset.to_dict()	
-            print >> sys.stdout, querystringverbose
         if not return_code_success:
             raise Exception('Error accessing ElasticSearch')
         if len(results) == 1 and len(results[0].strip()) == 0:
