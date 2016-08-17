@@ -19,7 +19,7 @@ class Jobs:
         self.jobs = {}
 
     def add_job(self, site, job):
-        if not self.jobs.has_key(site):
+        if site not in self.jobs:
             self.jobs[site] = []
 
         self.jobs[job.site].append(job)
@@ -49,9 +49,7 @@ class JobSuccessRateReporter(Reporter):
     def query(self, client):
         """Method that actually queries elasticsearch"""
         # Set up our search parameters
-        # wildcardcommonnameq = '*{}*'.format(self.config.get("query", "{}_commonname".format(self.vo.lower())))
         wildcardvoq = '*{}*'.format(self.config.get("query", "{}_voname".format(self.vo.lower())))
-        # wildcardvoq = '*{}*'.format(self.vo.lower())
 
         start_date = re.split('[-/ :]', self.start_time)
         starttimeq = datetime(*[int(elt) for elt in start_date]).isoformat()
@@ -71,7 +69,6 @@ class JobSuccessRateReporter(Reporter):
                 .query("wildcard", VOName=wildcardvoq)\
                 .filter("range", EndTime={"gte" : starttimeq, "lt" : endtimeq})\
                 .filter(Q({"term" : {"ResourceType" : "Payload"}}))
-# .query("wildcard",CommonName=wildcardcommonnameq)\
 
         if self.verbose:
             print resultset.to_dict()
@@ -116,7 +113,7 @@ class JobSuccessRateReporter(Reporter):
             job = Job(end_time, start_time, jobid, site, host, status)
             self.run.add_job(site, job)
             clusterid = jobid.split(".")[0]
-            if not self.clusters.has_key(clusterid):
+            if clusterid not in self.clusters:
                 self.clusters[clusterid] = []
             self.clusters[clusterid].append(job)
         return
@@ -188,9 +185,9 @@ class JobSuccessRateReporter(Reporter):
             for job in jobs:
                 if job.exit_code != 0:
                     failed += 1
-                    if not failures.has_key(job.host):
+                    if job.host not in failures:
                         failures[job.host] = {}
-                    if not failures[job.host].has_key(job.exit_code):
+                    if job.exit_code not in failures[job.host]:
                         failures[job.host][job.exit_code] = 0
                     failures[job.host][job.exit_code] += 1
             total_jobs += total
