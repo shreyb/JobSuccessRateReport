@@ -49,8 +49,8 @@ class JobSuccessRateReporter(Reporter):
     def query(self, client):
         """Method that actually queries elasticsearch"""
         # Set up our search parameters
-        # wildcardvoq = '*{}*'.format(self.config.get("query", "{}_voname".format(self.vo.lower())))
         voq = self.config.get("query", "{}_voname".format(self.vo.lower()))
+        productioncheck = '*Role=Production*'
 
         start_date = re.split('[-/ :]', self.start_time)
         starttimeq = datetime(*[int(elt) for elt in start_date]).isoformat()
@@ -67,10 +67,10 @@ class JobSuccessRateReporter(Reporter):
 
         # Elasticsearch query
         resultset = Search(using=client, index = indexpattern) \
+                .query("wildcard", VOName = productioncheck)\
                 .filter(Q({"term" : {"VOName" : voq}}))\
                 .filter("range", EndTime={"gte" : starttimeq, "lt" : endtimeq})\
                 .filter(Q({"term" : {"ResourceType" : "Payload"}}))
-# .query("wildcard", VOName=wildcardvoq)\
 
         if self.verbose:
             print resultset.to_dict()
