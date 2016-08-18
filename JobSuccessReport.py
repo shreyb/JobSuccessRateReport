@@ -168,6 +168,7 @@ class JobSuccessRateReporter(Reporter):
         table_summary = ""
         job_table = ""
 
+        job_table_cl_count = 0
         # Look in clusters, figure out whether job failed or succeded, categorize appropriately, and generate HTML line for total jobs failed by cluster
         for cid, cdict in self.clusters.iteritems():
             total_jobs = len(cdict['jobs'])
@@ -180,18 +181,20 @@ class JobSuccessRateReporter(Reporter):
                 failures.append(job)
             if total_jobs_failed == 0:
                 continue
-            job_table += '\n<tr><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'.format(cid,
-                                                                                                                                                                                    cdict['userid'],
-                                                                                                                                                                                    total_jobs,
-                                                                                                                                                                                    total_jobs_failed)
-            # Generate HTML line for each failed job
-            for job in failures:
-                job_table += '\n<tr><td></td><td></td><td></td><td align = "left">{}</td><td align = "left">{}</td><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td></tr>'.format(job.jobid,
-                                                                                                                                                                                                                                            job.start_time,
-                                                                                                                                                                                                                                            job.end_time,
-                                                                                                                                                                                                                                            job.site,
-                                                                                                                                                                                                                                            job.host,
-                                                                                                                                                                                                                                            job.exit_code)
+            if job_table_cl_count < 100:        # Limit number of clusters shown in report to 100.  Don't want to overwhelm the users
+                job_table += '\n<tr><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'.format(cid,
+                                                                                                                                                                                        cdict['userid'],
+                                                                                                                                                                                        total_jobs,
+                                                                                                                                                                                        total_jobs_failed)
+                # Generate HTML line for each failed job
+                for job in failures:
+                    job_table += '\n<tr><td></td><td></td><td></td><td align = "left">{}</td><td align = "left">{}</td><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td></tr>'.format(job.jobid,
+                                                                                                                                                                                                                                                job.start_time,
+                                                                                                                                                                                                                                                job.end_time,
+                                                                                                                                                                                                                                                job.site,
+                                                                                                                                                                                                                                                job.host,
+                                                                                                                                                                                                                                                job.exit_code)
+                job_table_cl_count += 1
 
         total_jobs = 0
 
