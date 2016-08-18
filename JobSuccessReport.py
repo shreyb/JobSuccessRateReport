@@ -82,6 +82,7 @@ class JobSuccessRateReporter(Reporter):
         results = []
         for hit in resultset.scan():
             try:
+                # Parse userid
                 try:
                     userid = re.match(".+CN=UID:(\w+)", hit['CommonName']).group(1)  # Grabs the first parenthesized subgroup in the hit['CommonName'] string, where that subgroup comes after "CN=UID:"
                 except AttributeError:
@@ -89,9 +90,14 @@ class JobSuccessRateReporter(Reporter):
                         userid = re.match(".+/(\w+\.fnal\.gov)", hit['CommonName']).group(1)    # If this doesn't match CILogon standard, just grab the *.fnal.gov string that ends the CN
                     except AttributeError:
                         userid = hit['CommonName'] # Just print the CN string, move on
-                globaljobid = hit['GlobalJobId']
-                jobid = globaljobid.split('#')[1] + '@' + globaljobid[globaljobid.find('.') + 1:globaljobid.find('#')]  # Modify this
-                realhost = re.sub('\s\(primary\)', '', hit['Host'])
+                # Parse jobid
+                try:
+                    jobparts = re.match('\w+\.(\w+\.\w+\.\w+)#(\w+\.\w+)#.+', hit['GlobalJobId']).group(2, 1)   # Parse the GlobalJobId string to grab the cluster number and schedd
+                    jobid = '{}@{}'.format(*jobparts)       # Put these together to create the jobid (e.g. 123.0@fifebatch1.fnal.gov)
+                except AttributeError:
+                    jobid = hit['GlobalJobId']      # If for some reason a probe gives us a bad jobid string, just keep going
+                realhost = re.sub('\s\(primary\)', '', hit['Host']) # Parse to get the real hostname
+
                 outstr = '{starttime}\t{endtime}\t{CN}\t{JobID}\t{hostdescription}\t{host}\t{exitcode}'.format(
                                                      starttime = hit['StartTime'],
                                                      endtime = hit['EndTime'],
