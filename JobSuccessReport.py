@@ -36,8 +36,9 @@ class Job:
 
 
 class JobSuccessRateReporter(Reporter):
-    def __init__(self, configuration, start, end, vo, template, is_test, verbose):
+    def __init__(self, configuration, start, end, vo, template, is_test, verbose, no_email):
         Reporter.__init__(self, configuration, start, end, verbose)
+        self.no_email = no_email
         self.is_test = is_test
         self.vo = vo
         self.template = template
@@ -256,6 +257,10 @@ class JobSuccessRateReporter(Reporter):
             emails = re.split('[; ,]', self.config.get("email", "{}_email".format(self.vo.lower()))) + \
                      re.split('[: ,]', self.config.get("email", "test_to"))
 
+        if self.no_email:
+            print "Not sending email"
+            return
+
         TextUtils.sendEmail(([], emails),
                                 "{} Production Jobs Success Rate on the OSG Sites ({} - {})".format(self.vo,
                                                                                                 self.start_time,
@@ -279,7 +284,7 @@ if __name__ == "__main__":
     try:
         config = Configuration.Configuration()
         config.configure(opts.config)
-        r = JobSuccessRateReporter(config, opts.start, opts.end, opts.vo, opts.template, opts.is_test, opts.verbose)
+        r = JobSuccessRateReporter(config, opts.start, opts.end, opts.vo, opts.template, opts.is_test, opts.verbose, opts.no_email)
         r.generate()
         r.send_report()
     except:

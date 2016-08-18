@@ -1,4 +1,3 @@
-from MySQLUtils  import MySQLUtils
 import TextUtils
 import abc
 import optparse
@@ -8,42 +7,42 @@ from Configuration import checkRequiredArguments
 class Reporter(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self,config,start,end=None,verbose=False):
-        """Constructor for OSGReporter 
+    def __init__(self, config, start, end=None, verbose=False):
+        """Constructor for OSGReporter
         Args:
                 config(Configuration) - configuration file
                 start(str) - start date (YYYY/MM/DD) of the report
-                end(str,optional) - end date (YYYY/MM/DD) of the report, defaults to 1 month from start date 
+                end(str,optional) - end date (YYYY/MM/DD) of the report, defaults to 1 month from start date
                 verbose(boolean,optional) - print debug messages to stdout
         """
 
-        self.header=[]
-        self.config=config.config
-        self.start_time=start
-        self.verbose=verbose
-        self.end_time=end
+        self.header = []
+        self.config = config.config
+        self.start_time = start
+        self.verbose = verbose
+        self.end_time = end
 
     def format_report(self):
-	    pass
+        pass
 
     @abc.abstractmethod
     def query(self):
         """Method to define subclass Elasticsearch query"""
         pass
-    
+
     @abc.abstractmethod
-    def send_report(self,report_type="test"):
+    def send_report(self, report_type="test"):
         """Send reports as ascii, csv, html attachements """
-        text={}
-        content=self.format_report()
-	print "header",self.header
-        emailReport=TextUtils.TextUtils(self.header)
-        text["text"]=emailReport.printAsTextTable("text",content)
-        text["csv"]=emailReport.printAsTextTable("csv",content)
-        text["html"]="<html><body><h2>%s</h2><table border=1>%s</table></body></html>" % (self.title,emailReport.printAsTextTable("html",content),)
-        emails=self.config.get("email","%s_to" % (report_type,)).split(",")
-        names=self.config.get("email","%s_realname" % (report_type,)).split(",")
-        TextUtils.sendEmail((names,emails),self.title,text, ("Gratia Operation",self.config.get("email","from")),self.config.get("email","smtphost"))
+        text = {}
+        content = self.format_report()
+        print "header", self.header
+        emailReport = TextUtils.TextUtils(self.header)
+        text["text"] = emailReport.printAsTextTable("text", content)
+        text["csv"] = emailReport.printAsTextTable("csv", content)
+        text["html"] = "<html><body><h2>%s</h2><table border=1>%s</table></body></html>" % (self.title, emailReport.printAsTextTable("html", content),)
+        emails = self.config.get("email", "%s_to" % (report_type,)).split(",")
+        names = self.config.get("email", "%s_realname" % (report_type,)).split(",")
+        TextUtils.sendEmail((names, emails), self.title, text, ("Gratia Operation", self.config.get("email", "from")), self.config.get("email", "smtphost"))
 
     @staticmethod
     def parse_opts():
@@ -70,9 +69,10 @@ class Reporter(object):
         parser.add_option("-D", "--debug",
                           action="store_true", dest="debug", default=False,
                           help="print detailed debug messages to log file")
-        
+        parser.add_option("-n", "--nomail",
+                          action="store_true", dest="no_email", default=False,
+                          help="Do not send the email.  Use this with -v to also get verbose output")
+
         options, arguments = parser.parse_args()
         checkRequiredArguments(options, parser)
-        return options, arguments        
-
-
+        return options, arguments
