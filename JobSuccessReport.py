@@ -82,12 +82,20 @@ class JobSuccessRateReporter(Reporter):
         results = []
         for hit in resultset.scan():
             try:
+                try:
+                    userid = re.match(".+CN=UID:(\w+)", hit['CommonName']).group(1)  # Grabs the first parenthesized subgroup in the hit['CommonName'] string, where that subgroup comes after "CN=UID:"
+                except AttributeError:
+                    try:
+                        userid = re.match(".+/(\w+\.fnal\.gov)", hit['CommonName']).group(1)    # If this doesn't match CILogon standard, just grab the *.fnal.gov string that ends the CN
+                    except AttributeError:
+                        userid = hit['CommonName'] # Just print the CN string, move on
                 globaljobid = hit['GlobalJobId']
+                jobid = globaljobid.split('#')[1] + '@' + globaljobid[globaljobid.find('.') + 1:globaljobid.find('#')]  # Modify this
                 realhost = re.sub('\s\(primary\)', '', hit['Host'])
-                jobid = globaljobid.split('#')[1] + '@' + globaljobid[globaljobid.find('.') + 1:globaljobid.find('#')]
-                outstr = '{starttime}\t{endtime}\t{JobID}\t{hostdescription}\t{host}\t{exitcode}'.format(
+                outstr = '{starttime}\t{endtime}\t{CN}\t{JobID}\t{hostdescription}\t{host}\t{exitcode}'.format(
                                                      starttime = hit['StartTime'],
                                                      endtime = hit['EndTime'],
+                                                     CN = userid,
                                                      JobID = jobid,
                                                      hostdescription = hit['Host_description'],
                                                      host = realhost,
@@ -106,18 +114,19 @@ class JobSuccessRateReporter(Reporter):
             tmp = line.split('\t')
             start_time = tmp[0].strip().replace('T', ' ').replace('Z', '')
             end_time = tmp[1].strip().replace('T', ' ').replace('Z', '')
-            jobid = tmp[2].strip()
-            site = tmp[3].strip()
+            userid = tmp[2].strip()
+            jobid = tmp[3].strip()
+            site = tmp[4].strip()
             if site == "NULL":
                 continue
-            host = tmp[4].strip()
-            status = int(tmp[5].strip())
+            host = tmp[5].strip()
+            status = int(tmp[6].strip())
             job = Job(end_time, start_time, jobid, site, host, status)
             self.run.add_job(site, job)
             clusterid = jobid.split(".")[0]
             if clusterid not in self.clusters:
-                self.clusters[clusterid] = []
-            self.clusters[clusterid].append(job)
+                self.clusters[clusterid] = {'userid' : userid, 'jobs': []}
+            self.clusters[clusterid]['jobs'].append(job)
         return
 
     def generate(self):
@@ -154,18 +163,19 @@ class JobSuccessRateReporter(Reporter):
         job_table = ""
 
         # Look in clusters, figure out whether job failed or succeded, categorize appropriately, and generate HTML line for total jobs failed by cluster
-        for cid, jobs in self.clusters.items():
-            total_jobs = len(jobs)
+        for cid, cdict in self.clusters.iteritems():
+            total_jobs = len(cdict['jobs'])
             failures = []
             total_jobs_failed = 0
-            for job in jobs:
+            for job in cdict['jobs']:
                 if job.exit_code == 0:
                     continue
                 total_jobs_failed += 1
                 failures.append(job)
             if total_jobs_failed == 0:
                 continue
-            job_table += '\n<tr><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'.format(cid,
+            job_table += '\n<tr><td align = "left">{}</td><td align = "right">{}</td><td align = "right">{}</td><td align = "right">{}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'.format(cid,
+                                                                                                                                                                                    cdict['userid'],
                                                                                                                                                                                     total_jobs,
                                                                                                                                                                                     total_jobs_failed)
             # Generate HTML line for each failed job
