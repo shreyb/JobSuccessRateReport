@@ -251,15 +251,15 @@ class JobSuccessRateReporter(Reporter):
             f.write(text)
 
         # The part that actually emails people.
+        if self.no_email:
+            print "Not sending email"
+            return
+
         if self.is_test:
             emails = re.split('[; ,]', self.config.get("email", "test_to"))
         else:
             emails = re.split('[; ,]', self.config.get("email", "{}_email".format(self.vo.lower()))) + \
                      re.split('[: ,]', self.config.get("email", "test_to"))
-
-        if self.no_email:
-            print "Not sending email"
-            return
 
         TextUtils.sendEmail(([], emails),
                                 "{} Production Jobs Success Rate on the OSG Sites ({} - {})".format(self.vo,
