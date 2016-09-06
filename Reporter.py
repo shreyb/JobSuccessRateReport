@@ -1,6 +1,7 @@
 import TextUtils
 import abc
 import optparse
+import re
 from Configuration import checkRequiredArguments
 
 
@@ -81,9 +82,8 @@ class Reporter(object):
         return options, arguments
 
     @staticmethod
-    def runerror(error, traceback):
-        emails = re.split('[; ,]', self.config.get("email", "test_to"))
-        TextUtils.sendEmail(([], emails),
+    def runerror(error, traceback, admin_emails):
+        TextUtils.sendEmail(([], admin_emails),
                             "ERROR PRODUCING REPORT: {} Production Jobs Success Rate on the OSG Sites ({} - {})".format(self.vo,
                                                                                                 self.start_time,
                                                                                                 self.end_time),

@@ -316,6 +316,7 @@ if __name__ == "__main__":
         r.send_report()
     except Exception as e:
         print >> sys.stderr, traceback.format_exc()
-        Reporter.runerror(e, traceback.format_exc())
+        emails = re.split('[; ,]', config.get("email", "test_to"))
+        Reporter.runerror(e, traceback.format_exc(), emails)
         sys.exit(1)
     sys.exit(0)
