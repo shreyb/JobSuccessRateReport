@@ -172,7 +172,6 @@ class JobSuccessRateReporter(Reporter):
 
     def send_report(self):
         table = ""
-#        total_jobs = 0
         total_failed = 0
         if len(self.run.jobs) == 0:
             return
