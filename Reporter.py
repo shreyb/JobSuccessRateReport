@@ -1,7 +1,7 @@
 import TextUtils
 import abc
 import optparse
-import re
+from datetime import datetime
 from Configuration import checkRequiredArguments
 
 
@@ -84,9 +84,7 @@ class Reporter(object):
     @staticmethod
     def runerror(error, traceback, admin_emails):
         TextUtils.sendEmail(([], admin_emails),
-                            "ERROR PRODUCING REPORT: {} Production Jobs Success Rate on the OSG Sites ({} - {})".format(self.vo,
-                                                                                                self.start_time,
-                                                                                                self.end_time),
+                            "ERROR PRODUCING REPORT: Production Jobs Success Rate on the OSG Sites: Date Generated {}".format(datetime.now()),
                             "ERROR: {}\n\nTRACEBACK: {}".format(error, traceback),
                             ("Gratia Operation", "sbhat@fnal.gov"),
                             "smtp.fnal.gov")
