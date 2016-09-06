@@ -79,3 +79,15 @@ class Reporter(object):
         options, arguments = parser.parse_args()
         checkRequiredArguments(options, parser)
         return options, arguments
+
+    @staticmethod
+    def runerror(error, traceback):
+        emails = re.split('[; ,]', self.config.get("email", "test_to"))
+        TextUtils.sendEmail(([], emails),
+                            "ERROR PRODUCING REPORT: {} Production Jobs Success Rate on the OSG Sites ({} - {})".format(self.vo,
+                                                                                                self.start_time,
+                                                                                                self.end_time),
+                            "ERROR: {}\n\nTRACEBACK: {}".format(error, traceback),
+                            ("Gratia Operation", "sbhat@fnal.gov"),
+                            "smtp.fnal.gov")
+        return

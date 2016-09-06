@@ -4,11 +4,11 @@ import re
 from datetime import datetime
 import logging
 from time import sleep
+import traceback
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q
 
-import traceback
 import TextUtils
 import Configuration
 from Reporter import Reporter
@@ -314,7 +314,8 @@ if __name__ == "__main__":
                                    opts.no_email)
         r.generate()
         r.send_report()
-    except:
+    except Exception as e:
         print >> sys.stderr, traceback.format_exc()
+        Reporter.runerror(e, traceback.format_exc())
         sys.exit(1)
     sys.exit(0)
