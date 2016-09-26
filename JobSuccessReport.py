@@ -47,6 +47,11 @@ class JobSuccessRateReporter(Reporter):
         self.run = Jobs()
         self.clusters = {}
         self.connectStr = None
+        self.datesplit_pattern = re.compile('[-/ :]')
+        self.usermatch_CILogon = re.compile('.+CN=UID:(\w+)')
+        self.usermatch_FNAL = re.compile('.+/(\w+\.fnal\.gov)')
+        self.jobparts = re.compile('\w+\.(\w+\.\w+\.\w+)#(\w+\.\w+)#.+')
+        self.realhost_pattern = re.compile('\s\(primary\)')
 
     def query(self, client):
         """Method that actually queries elasticsearch"""
@@ -54,10 +59,10 @@ class JobSuccessRateReporter(Reporter):
         voq = self.config.get("query", "{}_voname".format(self.vo.lower()))
         productioncheck = '*Role=Production*'
 
-        start_date = re.split('[-/ :]', self.start_time)
+        start_date = self.datesplit_pattern.split(self.start_time)
         starttimeq = datetime(*[int(elt) for elt in start_date]).isoformat()
 
-        end_date = re.split('[-/ :]', self.end_time)
+        end_date = self.datesplit_pattern.split(self.end_time)
         endtimeq = datetime(*[int(elt) for elt in end_date]).isoformat()
 
         # Generate the index pattern based on the start and end dates
@@ -88,24 +93,25 @@ class JobSuccessRateReporter(Reporter):
                 try:
                     # Grabs the first parenthesized subgroup in the hit['CommonName'] string, where that subgroup comes
                     # after "CN=UID:"
-                    userid = re.match(".+CN=UID:(\w+)", hit['CommonName']).group(1)
+                    userid = self.usermatch_CILogon.match(hit['CommonName']).\
+                        group(1)
                 except AttributeError:
                     try:
-                        userid = re.match(".+/(\w+\.fnal\.gov)", hit['CommonName']).group(
-                            1)  # If this doesn't match CILogon standard, just grab the *.fnal.gov string at the end
+                        userid = self.usermatch_FNAL.match(hit['CommonName']).\
+                            group(1)  # If this doesn't match CILogon standard, just grab the *.fnal.gov string at the end
                     except AttributeError:
                         userid = hit['CommonName']  # Just print the CN string, move on
                 # Parse jobid
                 try:
                     # Parse the GlobalJobId string to grab the cluster number and schedd
-                    jobparts = re.match('\w+\.(\w+\.\w+\.\w+)#(\w+\.\w+)#.+', hit['GlobalJobId']).group(2,
-                                                                                                        1)
+                    jobparts = self.jobparts.match(hit['GlobalJobId']).group(2
+                                                                             ,1)
                     # Put these together to create the jobid (e.g. 123.0@fifebatch1.fnal.gov)
                     jobid = '{}@{}'.format(*jobparts)
                 except AttributeError:
                     jobid = hit[
                         'GlobalJobId']  # If for some reason a probe gives us a bad jobid string, just keep going
-                realhost = re.sub('\s\(primary\)', '', hit['Host'])  # Parse to get the real hostname
+                realhost = self.realhost_pattern.sub('', hit['Host'])  # Parse to get the real hostname
 
                 outstr = '{starttime}\t{endtime}\t{CN}\t{JobID}\t{hostdescription}\t{host}\t{exitcode}'.format(
                     starttime=hit['StartTime'],
